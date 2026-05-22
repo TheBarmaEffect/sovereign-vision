@@ -1,0 +1,52 @@
+# Sovereign Vision — factory-floor scenario configuration.
+#
+# Drop-in YAML for `python demo/run_demo.py --config configs/factory_floor.yaml`.
+
+session:
+  name: "factory-line-3-shift-A"
+  output_dir: "./certificates/factory_floor"
+  write_frame_certs: false   # session cert only; set true for forensic mode
+
+detector:
+  model_path: "models/yolo26m.npz"
+  conf_threshold: 0.25       # the firewall enforces SV-005's 0.75 floor on top
+  device: "mlx"
+
+aggregator:
+  rolling_window: 30
+  ppe_window: 10
+
+rules:
+  confidence_floor: 0.75
+  aggregation_window: 5
+  sensitive_classes:
+    - knife
+    - gun
+    - scissors
+
+scenario:
+  name: "factory_floor"
+  ppe_required:
+    - hardhat
+    - vest
+    - goggles
+  zones:
+    - Entry
+    - "Assembly Line A"
+    - "Assembly Line B"
+    - "QA Station"
+    - "Hazmat Zone"
+    - "Tool Crib"
+    - "Break Area"
+    - "Loading Bay"
+    - "Exit Corridor"
+  escalation_rules:
+    hazmat_zone_max_occupancy: 2
+    compliance_threshold: 0.80
+    alert_on_breach: true
+
+dashboard:
+  enable_opencv: true
+  enable_terminal: true
+  window_width: 1920
+  window_height: 720

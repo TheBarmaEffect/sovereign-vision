@@ -1,0 +1,43 @@
+# Sovereign Vision — retail-floor scenario configuration.
+
+session:
+  name: "store-014-saturday"
+  output_dir: "./certificates/retail_floor"
+  write_frame_certs: false
+
+detector:
+  model_path: "models/yolo26m.npz"
+  conf_threshold: 0.25
+  device: "mlx"
+
+aggregator:
+  rolling_window: 60        # 60-frame rolling window for hotspot stability
+  ppe_window: 10
+
+rules:
+  confidence_floor: 0.75
+  aggregation_window: 5
+  sensitive_classes:
+    - knife
+    - gun
+
+scenario:
+  name: "retail_floor"
+  ppe_required: []         # no PPE in retail
+  zones:
+    - Entrance
+    - Promotions
+    - Electronics
+    - Apparel
+    - "Home Goods"
+    - Grocery
+    - Checkout
+    - "Customer Service"
+    - Exit
+  escalation_rules:
+    peak_hour_alert: true
+    hotspot_top_k: 3
+
+dashboard:
+  enable_opencv: true
+  enable_terminal: true

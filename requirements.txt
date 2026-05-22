@@ -1,0 +1,27 @@
+# Sovereign Vision — pinned runtime dependencies.
+# These versions are tested on Apple Silicon (M-series) with Python 3.10–3.13.
+
+# Computer vision + numerical
+numpy==2.1.3
+opencv-python==4.10.0.84
+Pillow==11.0.0
+
+# MLX (Apple Silicon native ML runtime)
+mlx==0.20.0
+
+# Terminal UI for the secondary live dashboard
+rich==13.9.4
+
+# Data modelling
+pydantic==2.10.3
+
+# Logging / structured output
+structlog==24.4.0
+
+# Testing
+pytest==8.3.4
+pytest-cov==6.0.0
+
+# Dev tooling (optional but pinned for reproducibility)
+ruff==0.8.4
+mypy==1.13.0

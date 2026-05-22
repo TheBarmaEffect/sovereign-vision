@@ -1,0 +1,30 @@
+                    GNU AFFERO GENERAL PUBLIC LICENSE
+                       Version 3, 19 November 2007
+
+ Copyright (C) 2026 Karthik Barma <karthik@thebarmaeffect.dev>
+
+ Everyone is permitted to copy and distribute verbatim copies of this
+ license document, but changing it is not allowed.
+
+                            Preamble
+
+  The GNU Affero General Public License is a free, copyleft license for
+software and other kinds of works, specifically designed to ensure
+cooperation with the community in the case of network server software.
+
+  This project, Sovereign Vision, is licensed under the AGPL-3.0 to remain
+consistent with the YOLO26 MLX upstream and to ensure that any organization
+deploying constitutional-firewall code over a network must keep their
+modifications open. Privacy infrastructure should be inspectable.
+
+  The complete text of the GNU Affero General Public License v3.0 is
+available at: https://www.gnu.org/licenses/agpl-3.0.txt
+
+  TL;DR for enterprise users:
+  - You can use Sovereign Vision in your products.
+  - If you modify the source AND offer it as a network service, you must
+    publish your modifications under AGPL-3.0.
+  - The constitutional rule set is part of the licensed work.
+  - This license intentionally favors transparency in privacy-critical
+    systems. If that conflicts with your business model, the author is
+    available for commercial licensing inquiries.

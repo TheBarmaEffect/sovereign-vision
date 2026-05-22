@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Model weights (download separately, not committed)
+models/
+*.npz
+*.pt
+*.pth
+*.onnx
+
+# Compliance certificates (generated at runtime, contain session data)
+certificates/*.json
+!certificates/.gitkeep
+
+# Local config / secrets
+.env
+.env.local
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+.cursor/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
+*.log
+logs/
+
+# Demo recordings (large files — keep out of git)
+recordings/
+*.mp4
+*.mov
+!assets/*.mp4
+!assets/*.mov
