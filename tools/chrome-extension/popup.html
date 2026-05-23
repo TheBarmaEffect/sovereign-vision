@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sovereign Vision Verifier</title>
+<style>
+  :root {
+    --bg: #0a0b0e;
+    --panel: #16181d;
+    --card: #1c1f26;
+    --border: #2a2e37;
+    --text: #f5f7fa;
+    --text-soft: #98a1b0;
+    --green: #30d158;
+    --blue: #0a84ff;
+    --red: #ff453a;
+    --amber: #ff9f0a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    width: 380px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 system-ui, sans-serif;
+    background: linear-gradient(180deg, var(--bg), var(--panel));
+    color: var(--text);
+    padding: 18px;
+  }
+  h1 { margin: 0 0 4px 0; font-size: 16px; font-weight: 700; }
+  .sub { color: var(--text-soft); font-size: 11px; margin-bottom: 14px; }
+  .drop {
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 22px 14px;
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .drop.hover { border-color: var(--blue); color: var(--text); }
+  .drop input { display: none; }
+  .result { display: none; margin-top: 14px; }
+  .row { display: flex; justify-content: space-between;
+         padding: 8px 12px; background: var(--card);
+         border: 1px solid var(--border); border-radius: 6px;
+         margin-bottom: 6px; font-size: 12px; }
+  .row .k { color: var(--text-soft); }
+  .row .v { font-weight: 600; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 6px;
+           font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
+  .badge.ok { background: rgba(48,209,88,0.15); color: var(--green);
+              border: 1px solid var(--green); }
+  .badge.fail { background: rgba(255,69,58,0.15); color: var(--red);
+                border: 1px solid var(--red); }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .footer { margin-top: 14px; color: var(--text-soft); font-size: 10px;
+            text-align: center; }
+  .footer a { color: var(--text-soft); text-decoration: none; }
+</style>
+</head>
+<body>
+<h1>Sovereign Vision <span class="badge ok" style="font-size:9px;padding:1px 6px;">v1.2</span></h1>
+<div class="sub">Compliance certificate verifier &middot; zero upload</div>
+
+<label class="drop" id="drop">
+  <input type="file" accept="application/json" id="file" />
+  <strong>Click</strong> or drop a <code>session_*.json</code>
+</label>
+
+<div class="result" id="result">
+  <div class="row"><div class="k">Status</div><div class="v" id="status">-</div></div>
+  <div class="row"><div class="k">Session</div><div class="v mono" id="session">-</div></div>
+  <div class="row"><div class="k">Frames</div><div class="v" id="frames">-</div></div>
+  <div class="row"><div class="k">Duration</div><div class="v" id="duration">-</div></div>
+  <div class="row"><div class="k">Compliance score</div><div class="v" id="score">-</div></div>
+  <div class="row"><div class="k">Chain length</div><div class="v" id="chainlen">-</div></div>
+  <div class="row"><div class="k">Integrity</div><div class="v" id="verify">-</div></div>
+</div>
+
+<div class="footer">
+  By <a href="https://github.com/TheBarmaEffect" target="_blank">Karthik Barma</a>
+  &middot;
+  <a href="https://github.com/TheBarmaEffect/sovereign-vision" target="_blank">source</a>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

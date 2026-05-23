@@ -76,15 +76,28 @@ def main(argv: Optional[list[str]] = None) -> int:
         production_mode=args.production,
     )
 
-    session_cert = cert_gen.generate_session_cert()
+    snap = metrics.snapshot()
+    status_counts = {
+        "CLEAR":     snap.status_clear,
+        "ESCALATED": snap.status_escalated,
+        "BLOCKED":   snap.status_blocked,
+    }
+    session_cert = cert_gen.generate_session_cert(
+        status_counts=status_counts,
+        redactions=snap.total_redactions,
+        dp_cumulative_epsilon=firewall.dp_cumulative_epsilon,
+    )
     print()
     print("Session sealed.")
-    print(f"  session_id : {session_cert.session_id}")
-    print(f"  frames     : {session_cert.total_frames}")
-    print(f"  duration   : {session_cert.duration_seconds:.2f}s")
-    print(f"  rules fired: {sum(session_cert.rules_triggered.values())}")
-    print(f"  merkle root: {session_cert.anchor.merkle_root}")
-    print(f"  output dir : {output_dir}")
+    print(f"  session_id   : {session_cert.session_id}")
+    print(f"  frames       : {session_cert.total_frames}")
+    print(f"  duration     : {session_cert.duration_seconds:.2f}s")
+    print(f"  rules fired  : {sum(session_cert.rules_triggered.values())}")
+    score = session_cert.compliance_score or {}
+    print(f"  compliance   : {score.get('score', '-')} / 100 (grade {score.get('grade', '-')})")
+    print(f"  DP epsilon   : {firewall.dp_cumulative_epsilon:.3f}")
+    print(f"  merkle root  : {session_cert.anchor.merkle_root}")
+    print(f"  output dir   : {output_dir}")
     return rc
 
 
@@ -179,6 +192,7 @@ def _run_loop(
                 result = detector.detect(frame)
                 raw_for_view = []
             cert = cert_gen.generate_frame_cert(result, rules=list(firewall.rules))
+            metrics.record(result)
 
             if not headless and ctx is not None:
                 ingest(ctx, raw_for_view, result, cert)  # type: ignore[misc]

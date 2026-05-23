@@ -1,0 +1,47 @@
+# Sovereign Vision rule pack: OSHA (Manufacturing).
+#
+# Layered on top of SV-001..SV-007. Adds workplace-safety rules
+# specific to industrial environments.
+
+pack:
+  name: "OSHA Workplace Safety"
+  version: "1.0"
+  authority: "U.S. Occupational Safety and Health Administration"
+  citation: "29 CFR 1910"
+  description: |
+    Aggregate-only PPE and hazard monitoring for manufacturing and
+    warehousing. No worker identification at any layer.
+
+rules:
+  - rule_id: SV-200
+    name: "PPE Required Class Tracking"
+    description: >
+      Hardhat, safety vest, goggles, and respirator counts are
+      aggregated alongside person counts so PPE compliance rate can
+      be computed without identifying any worker.
+    applies_to: ["hardhat", "vest", "goggles", "mask"]
+    action: AGGREGATE
+    severity: HIGH
+    legal_basis: "OSHA 29 CFR 1910.132 (PPE)"
+
+  - rule_id: SV-201
+    name: "Forklift Lane Proximity Escalation"
+    description: >
+      A person detected in a designated forklift lane triggers an
+      aggregate escalation event (no worker ID, just zone occupancy).
+    applies_to: ["person"]
+    action: ESCALATE
+    severity: HIGH
+    legal_basis: "OSHA 29 CFR 1910.178"
+
+  - rule_id: SV-202
+    name: "Hazmat Zone Max Occupancy"
+    description: >
+      Hazmat-zone occupancy exceeding 2 simultaneous persons triggers
+      an aggregate escalation. Worker identification is NOT collected.
+    applies_to: ["person"]
+    action: ESCALATE
+    severity: MEDIUM
+    legal_basis: "OSHA 29 CFR 1910.120"
+    metadata:
+      hazmat_zone_max_occupancy: 2

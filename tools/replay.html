@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sovereign Vision · Session Replay</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg-deep: #0a0b0e; --bg-panel: #16181d; --bg-card: #1c1f26;
+    --border: #2a2e37; --text: #f5f7fa; --soft: #98a1b0; --dim: #6f7888;
+    --green: #30d158; --blue: #0a84ff; --amber: #ff9f0a; --red: #ff453a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 28px 40px;
+    background: linear-gradient(180deg, var(--bg-deep), var(--bg-panel));
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 system-ui, sans-serif;
+  }
+  header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 18px; }
+  header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+  header .tag { font-size: 11px; padding: 4px 10px; border-radius: 6px;
+                color: var(--blue); border: 1px solid var(--blue); }
+  .sub { color: var(--soft); font-size: 13px; margin-bottom: 22px; }
+  .drop {
+    border: 1.5px dashed var(--border); border-radius: 12px;
+    padding: 36px; text-align: center; color: var(--soft);
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .drop.hover { border-color: var(--blue); color: var(--text); }
+  .drop input { display: none; }
+  .player { display: none; margin-top: 22px; }
+  .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+  }
+  .card h3 { margin: 0 0 10px 0; font-size: 11px; text-transform: uppercase;
+             letter-spacing: 0.07em; color: var(--dim); }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  button {
+    background: var(--bg-card); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 600;
+  }
+  button.primary { background: var(--blue); border-color: var(--blue); }
+  button:hover { border-color: var(--blue); }
+  .timeline { flex: 1; height: 6px; background: var(--bg-deep);
+              border-radius: 3px; position: relative; cursor: pointer; }
+  .timeline .fill {
+    position: absolute; left: 0; top: 0; bottom: 0;
+    background: var(--blue); border-radius: 3px;
+  }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .zone {
+    aspect-ratio: 1; border-radius: 8px; background: var(--bg-card);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    justify-content: center; font-size: 26px; font-weight: 600;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--dim); padding: 6px 8px;
+       font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  td { padding: 5px 8px; border-bottom: 1px solid var(--border); }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .status { font-weight: 700; }
+  .status.CLEAR { color: var(--green); }
+  .status.ESCALATED { color: var(--amber); }
+  .status.BLOCKED { color: var(--red); }
+  footer { margin-top: 36px; color: var(--dim); font-size: 11px;
+           text-align: center; }
+  footer a { color: var(--soft); text-decoration: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sovereign Vision &middot; Session Replay</h1>
+  <span class="tag">Playback from certificates</span>
+</header>
+<div class="sub">
+  Drop a folder of <code>frame_*.json</code> files (or a single
+  <code>session_*.json</code>) to replay every firewall event from a
+  prior session. Reads only what is in the certificates - no raw data,
+  no PII, no server.
+</div>
+
+<label class="drop" id="drop">
+  <input type="file" id="file" multiple webkitdirectory directory />
+  <strong>Click</strong> or drop a folder of frame certificates here.
+</label>
+
+<div class="player" id="player">
+  <div class="card" style="margin-bottom:14px;">
+    <div class="controls">
+      <button class="primary" id="play">Play</button>
+      <button id="step">Step</button>
+      <span class="mono" id="frameLabel" style="color: var(--soft); min-width: 80px;">0 / 0</span>
+      <div class="timeline" id="timeline"><div class="fill" id="fill" style="width:0%"></div></div>
+      <span class="mono" id="statusLabel" class="status">-</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card" style="margin-bottom:12px;">
+        <h3>Zone occupancy (aggregate, DP-noisy)</h3>
+        <div class="grid3" id="zones"></div>
+      </div>
+      <div class="card">
+        <h3>Live rule events</h3>
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Rule</th><th>Action</th><th>Class</th></tr>
+          </thead>
+          <tbody id="rules"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Frame metadata</h3>
+      <table>
+        <tbody id="meta"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Built by <a href="https://github.com/TheBarmaEffect">Karthik Barma</a>
+  &middot;
+  <a href="https://github.com/TheBarmaEffect/sovereign-vision">source</a>
+</footer>
+
+<script>
+const ZONE_LABELS = [
+  ["zone_TL","zone_TC","zone_TR"],
+  ["zone_ML","zone_MC","zone_MR"],
+  ["zone_BL","zone_BC","zone_BR"]
+];
+
+const drop = document.getElementById("drop");
+const fileEl = document.getElementById("file");
+const player = document.getElementById("player");
+const playBtn = document.getElementById("play");
+const stepBtn = document.getElementById("step");
+const frameLabel = document.getElementById("frameLabel");
+const timeline = document.getElementById("timeline");
+const fill = document.getElementById("fill");
+const statusLabel = document.getElementById("statusLabel");
+const zonesGrid = document.getElementById("zones");
+const rulesTbl = document.getElementById("rules");
+const metaTbl = document.getElementById("meta");
+
+let frames = [];
+let idx = 0;
+let playing = false;
+let timer = null;
+
+["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.add("hover");
+}));
+["dragleave","drop"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.remove("hover");
+}));
+drop.addEventListener("drop", async ev => {
+  const items = ev.dataTransfer.items;
+  if (!items) return;
+  const files = [];
+  for (const it of items) {
+    const entry = it.webkitGetAsEntry && it.webkitGetAsEntry();
+    if (entry) await collect(entry, files);
+  }
+  await loadFrames(files);
+});
+fileEl.addEventListener("change", async () => {
+  await loadFrames([...fileEl.files]);
+});
+
+async function collect(entry, out) {
+  if (entry.isFile) {
+    await new Promise(r => entry.file(f => { out.push(f); r(); }));
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    await new Promise(r => reader.readEntries(async ents => {
+      for (const ent of ents) await collect(ent, out);
+      r();
+    }));
+  }
+}
+
+async function loadFrames(fileList) {
+  const jsons = fileList.filter(f => /\.(json)$/i.test(f.name));
+  const parsed = [];
+  for (const f of jsons) {
+    try { parsed.push(JSON.parse(await f.text())); }
+    catch { /* skip */ }
+  }
+  // Sort frame certs by frame_id; ignore session certs
+  frames = parsed.filter(d => d.cert_type === "frame")
+                 .sort((a, b) => (a.frame_id||0) - (b.frame_id||0));
+  if (!frames.length) {
+    alert("No frame certs found. Drop a folder of frame_*.json files.");
+    return;
+  }
+  idx = 0;
+  player.style.display = "block";
+  render();
+}
+
+playBtn.addEventListener("click", () => {
+  playing = !playing;
+  playBtn.textContent = playing ? "Pause" : "Play";
+  if (playing) {
+    timer = setInterval(() => {
+      idx = (idx + 1) % frames.length;
+      render();
+    }, 80);
+  } else clearInterval(timer);
+});
+
+stepBtn.addEventListener("click", () => {
+  idx = (idx + 1) % frames.length;
+  render();
+});
+
+timeline.addEventListener("click", (e) => {
+  const rect = timeline.getBoundingClientRect();
+  const t = (e.clientX - rect.left) / rect.width;
+  idx = Math.floor(t * frames.length);
+  render();
+});
+
+function render() {
+  const f = frames[idx];
+  if (!f) return;
+  frameLabel.textContent = `${idx + 1} / ${frames.length}`;
+  fill.style.width = `${100 * (idx + 1) / frames.length}%`;
+  const st = f.constitutional_status || "-";
+  statusLabel.textContent = st;
+  statusLabel.className = "mono status " + st;
+
+  // Zones
+  const counts = (f.aggregate_output && f.aggregate_output.zones) || {};
+  zonesGrid.innerHTML = "";
+  ZONE_LABELS.flat().forEach(z => {
+    const div = document.createElement("div");
+    div.className = "zone";
+    const c = counts[z] || 0;
+    div.textContent = c;
+    const intensity = Math.min(1, c / 5);
+    div.style.background = `rgba(10,132,255,${0.06 + intensity * 0.45})`;
+    zonesGrid.appendChild(div);
+  });
+
+  // Rules table
+  rulesTbl.innerHTML = "";
+  (f.rules_applied || []).slice(0, 10).forEach(r => {
+    const tr = document.createElement("tr");
+    const date = new Date(f.timestamp_utc || Date.now()).toLocaleTimeString();
+    tr.innerHTML = `<td class="mono">${date}</td>
+                    <td class="mono">${r.rule_id}</td>
+                    <td>${r.action_taken}</td>
+                    <td>${r.applied_to_class}</td>`;
+    rulesTbl.appendChild(tr);
+  });
+
+  // Frame metadata
+  metaTbl.innerHTML = "";
+  const rows = [
+    ["frame_id", f.frame_id],
+    ["status", st],
+    ["latency", f.performance ? f.performance.processing_latency_ms + " ms" : "-"],
+    ["zones >0", Object.values(counts).filter(v => v > 0).length],
+    ["cert hash", (f.integrity_hash || "").slice(0, 16) + "..."],
+  ];
+  rows.forEach(([k, v]) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td style="color: var(--soft); width: 35%;">${k}</td>
+                    <td class="mono">${v}</td>`;
+    metaTbl.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>

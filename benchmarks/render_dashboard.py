@@ -47,7 +47,7 @@ def main() -> int:
         last_frame = frame
         result, raw_view = detector.detect_with_raw_preview(frame)
         cert = cert_gen.generate_frame_cert(result, rules=list(fw.rules))
-        ingest(ctx, raw_view, result, cert)
+        ingest(ctx, raw_view, result, cert, record_metrics=True)
 
     if last_frame is None:
         raise RuntimeError("no frame rendered")

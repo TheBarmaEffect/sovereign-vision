@@ -115,8 +115,15 @@ def ingest(
     raw_detections: Iterable[RawDetection],
     result: FirewallResult,
     cert: FrameCertificate,
+    record_metrics: bool = False,
 ) -> None:
-    """Plug a new firewall result + certificate into the dashboard state."""
+    """Plug a new firewall result + certificate into the dashboard state.
+
+    `record_metrics` defaults to False because run_demo.py records
+    metrics outside this function (so headless mode still gets a
+    full snapshot). Pass True if you are calling ingest() without an
+    external metrics owner.
+    """
     raw_list = list(raw_detections)
     ctx.raw_detections_buffer = raw_list
     ctx.total_raw_detections += len(raw_list)
@@ -125,7 +132,8 @@ def ingest(
     ctx.last_cert_ns = time.time_ns()
     ctx.tick += 1
     ctx.firewall_state.ingest(time.time(), result)
-    ctx.metrics.record(result)
+    if record_metrics:
+        ctx.metrics.record(result)
 
 
 # ---------------------------------------------------------------------------

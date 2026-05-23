@@ -66,10 +66,14 @@ class SessionCertificate:
     rules_triggered: dict[str, int]
     overall_status: str
     anchor: AuditChainAnchor
+    compliance_score: dict[str, Any] | None = None
+    hardware: dict[str, Any] | None = None
+    status_counts: dict[str, int] | None = None
+    dp_cumulative_epsilon: float = 0.0
     integrity_hash: str = ""
 
     def to_dict(self) -> dict[str, Any]:
-        payload = {
+        payload: dict[str, Any] = {
             "cert_version": CERT_VERSION,
             "cert_type": "session",
             "session_id": self.session_id,
@@ -82,6 +86,14 @@ class SessionCertificate:
             "overall_status": self.overall_status,
             "audit_chain": self.anchor.to_dict(),
         }
+        if self.compliance_score is not None:
+            payload["compliance_score"] = self.compliance_score
+        if self.hardware is not None:
+            payload["hardware"] = self.hardware
+        if self.status_counts is not None:
+            payload["status_counts"] = self.status_counts
+        if self.dp_cumulative_epsilon:
+            payload["dp_cumulative_epsilon"] = round(self.dp_cumulative_epsilon, 6)
         if not self.integrity_hash:
             self.integrity_hash = _integrity_hash(payload)
         payload["integrity_hash"] = self.integrity_hash
@@ -197,11 +209,43 @@ class CertificateGenerator:
 
     # -- session certificate -------------------------------------------------
 
-    def generate_session_cert(self) -> SessionCertificate:
-        """Seal the audit chain and emit the session-end certificate."""
+    def generate_session_cert(
+        self,
+        status_counts: dict[str, int] | None = None,
+        redactions: int | None = None,
+        dp_cumulative_epsilon: float = 0.0,
+        include_hardware: bool = True,
+    ) -> SessionCertificate:
+        """Seal the audit chain and emit the session-end certificate.
+
+        Optional inputs let callers attach session-level metrics that
+        only the firewall/metrics layer knows. Everything is stored
+        inside the integrity-hashed payload, so any downstream edit
+        breaks the cert.
+        """
         ended_ns = time.time_ns()
         anchor = self._chain.seal()
         overall_status = self._derive_overall_status()
+
+        # Compliance score
+        from sovereign.score import compute as compute_score
+        score = compute_score(
+            rules_triggered=self._rules_triggered,
+            total_frames=self._frame_count,
+            status_counts=status_counts or {},
+            redactions=redactions or 0,
+            audit_chain_verified=self._chain.verify(),
+            dp_cumulative_epsilon=dp_cumulative_epsilon,
+        )
+
+        hardware_dict: dict[str, Any] | None = None
+        if include_hardware:
+            try:
+                from sovereign.hardware import detect
+                hardware_dict = detect().to_dict()
+            except Exception:
+                hardware_dict = None
+
         session_cert = SessionCertificate(
             session_id=self._session_id,
             started_utc=_iso_utc_from_ns(self._started_ns),
@@ -212,6 +256,10 @@ class CertificateGenerator:
             rules_triggered=dict(self._rules_triggered),
             overall_status=overall_status,
             anchor=anchor,
+            compliance_score=score.to_dict(),
+            hardware=hardware_dict,
+            status_counts=dict(status_counts) if status_counts else None,
+            dp_cumulative_epsilon=dp_cumulative_epsilon,
         )
         if self._output_dir is not None:
             self._dump_session_cert(session_cert)

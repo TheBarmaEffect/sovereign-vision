@@ -1,0 +1,40 @@
+# Sovereign Vision rule pack: Public Transit / Smart Cities.
+#
+# Layered on top of SV-001..SV-007. Adds platform-occupancy alerts and
+# crowding aggregates without identifying any individual passenger.
+
+pack:
+  name: "Public Transit Crowding Analytics"
+  version: "1.0"
+  authority: "EU Data Protection Board + APTA"
+  citation: "GDPR Art. 6(1)(e) public interest"
+  description: |
+    Aggregate platform occupancy and dwell metrics for transit
+    operators. No facial recognition, no individual journey tracking.
+
+rules:
+  - rule_id: SV-400
+    name: "Platform Overcrowding Escalation"
+    description: >
+      Platform zone occupancy exceeding the configured cap triggers an
+      aggregate alert to operations. Passenger identification is NOT
+      collected.
+    applies_to: ["person"]
+    action: ESCALATE
+    severity: HIGH
+    legal_basis: "APTA SS-OPS-RP-002-12"
+    metadata:
+      platform_max_occupancy: 30
+
+  - rule_id: SV-401
+    name: "Unattended Item Detection"
+    description: >
+      A bag, backpack, or suitcase in a station zone for more than the
+      configured threshold triggers an aggregate alert. The system does
+      NOT record who placed the item.
+    applies_to: ["backpack", "suitcase", "handbag"]
+    action: ESCALATE
+    severity: HIGH
+    legal_basis: "Internal security policy"
+    metadata:
+      idle_seconds: 300

@@ -11,7 +11,7 @@
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-0A84FF.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Tests](https://img.shields.io/badge/tests-77%20passing-30D158.svg)](tests/)
 [![Constitution](https://img.shields.io/badge/constitution-SV--001..SV--007-FF453A.svg)](docs/CONSTITUTIONAL_RULES.md)
-[![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M-series-000000.svg)](https://www.apple.com/mac/)
+[![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M%20series-000000.svg)](https://www.apple.com/mac/)
 [![Track](https://img.shields.io/badge/YOLO26%20MLX%20Challenge-Enterprise-BF5AF2.svg)](https://github.com/thewebAI/yolo-mlx)
 [![Research](https://img.shields.io/badge/Research-Glass%20Box%20Framework-30D158.svg)](https://github.com/TheBarmaEffect)
 
@@ -23,31 +23,175 @@ Research: Glass Box Framework  ·  Runtime constitutional AI verification
 
 ---
 
-## The Problem
+## What is this in one sentence?
 
-Enterprises that want to deploy computer vision today hit a legal wall.
+A YOLO26-MLX-based computer-vision system that **physically cannot leak PII**
+because seven cryptographically-audited constitutional rules redact every
+person bounding box, hash every face region, drop every track ID, and add
+calibrated differential-privacy noise to every aggregate **before any
+output is produced**. Runs entirely on-device on Apple Silicon. Issues a
+self-attested, Merkle-anchored compliance certificate at the end of every
+session.
 
-GDPR Article 4(1) classifies a person's spatial position as personal data.
-Article 9 covers face data as a special category. Recital 30 covers track
-IDs. CCPA and HIPAA add their own layers. Every off-the-shelf CV system
-on the market today produces detections that are PII the moment they
-reach memory: bounding boxes, track IDs, face embeddings. Then it tries
-to clean them up downstream. Legal teams cannot defend that pattern.
+If you're a CTO and your legal team has been blocking computer vision
+deployments because of GDPR, CCPA, or HIPAA: this is your unlock.
 
-Result: most plants, stores, and hospitals do not deploy CV at all, or
-pay for expensive cloud anonymisation pipelines that still create
-liability because the PII touched a server.
+---
 
-## The Solution
+## Why anyone should care (90-second read)
 
-Sovereign Vision intercepts every YOLO26 inference **before any output
-exists** with a **Constitutional Firewall**. Seven immutable rules,
-each mapped to a specific legal article, redact, hash, block, aggregate,
-escalate, and noise detections in flight. Only aggregate output, with
-calibrated differential-privacy noise on per-zone counts, ever leaves
-the inference pipeline.
+**The problem every enterprise has today.** You want to deploy computer
+vision in a factory, store, or hospital. Every off-the-shelf CV system
+produces bounding boxes, face embeddings, and per-individual track IDs.
+GDPR Article 4(1) classifies the position of a person as personal data.
+Article 9 classifies face data as a special category. Recital 30 covers
+track IDs. The moment the model produces these, you have a PII handling
+problem.
 
-This is not a policy. This is the type system.
+**The dominant industry pattern is post-hoc anonymisation.** You run
+inference normally, then strip the PII downstream. Your legal team has to
+trust that the post-processor is correctly configured in every code path,
+every time, forever. That's not a guarantee. That's a hope.
+
+**Sovereign Vision moves the GDPR boundary one step left.** The bbox
+never exists in a form that the rest of the system can see. There is no
+post-processor to trust. There's an unbreakable contract enforced by the
+type system, the constitution, and a Merkle audit chain that lets any
+third party detect tampering after the fact.
+
+You're not selling your legal team a policy document. You're handing
+them a session certificate with a 256-bit Merkle root, and a JSON file
+they can drop into a browser to verify themselves.
+
+---
+
+## See it in action
+
+![Sovereign Vision dashboard](assets/demo_screenshot.png)
+
+Three live panels, every frame:
+
+- **Left** is what YOLO26 sees, raw. Every person region is visibly
+  tagged "PII". This panel is suppressed entirely in `--production`.
+- **Center** is the constitutional firewall. Each rule event scrolls
+  with a timestamp, action, and pass/applied state. The status badge
+  at the top is CLEAR, ESCALATED, or BLOCKED for the latest frame.
+- **Right** is what your compliance team sees. Aggregate zone heatmap
+  with DP noise, PPE compliance, the latest cert hash, GDPR badges,
+  and the live Apple Silicon hardware fingerprint.
+
+The data on the right is the only data that exists. The data on the
+left is computed, used to update the right, and dropped.
+
+---
+
+## Quick path by who you are
+
+<details>
+<summary><strong>I'm a CTO or compliance officer.</strong> 3 commands.</summary>
+
+```bash
+# 1. Install everything
+curl -sSL https://raw.githubusercontent.com/TheBarmaEffect/sovereign-vision/main/install.sh | sh
+
+# 2. Run the production-mode demo (no raw panel)
+cd ~/sovereign-vision && source .venv/bin/activate
+sovereign demo --production
+
+# 3. Hand the certificate to your legal team
+open certificates/session_*.json
+# Or drop it into tools/cert_viewer.html in any browser
+```
+
+The session certificate is **self-attested, audit-verifiable**. Your
+legal team can verify the integrity hash without contacting anyone.
+</details>
+
+<details>
+<summary><strong>I'm a senior engineer evaluating this.</strong> Read these in order.</summary>
+
+1. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - data flow, redactor invariants, audit chain
+2. [docs/CONSTITUTIONAL_RULES.md](docs/CONSTITUTIONAL_RULES.md) - the 7 rules with legal commentary
+3. [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) - STRIDE, adversary classes, deployment checklist
+4. [`sovereign/firewall.py`](sovereign/firewall.py) - the orchestrator (~270 lines)
+5. [`tests/test_firewall.py`](tests/test_firewall.py) - the constitutional zero-PII proofs
+</details>
+
+<details>
+<summary><strong>I'm a judge with 10 minutes.</strong> Here's the demo path.</summary>
+
+```bash
+git clone https://github.com/TheBarmaEffect/sovereign-vision.git
+cd sovereign-vision
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+PYTHONPATH=. python demo/run_demo.py --headless --max-frames 100
+```
+
+Watch the output. The session certificate has a compliance score
+(0-100), a Merkle root, and a hardware fingerprint. Drop the JSON
+into [tools/cert_viewer.html](tools/cert_viewer.html) in any browser
+to re-verify the integrity hash. Run `pytest tests/ -m constitutional`
+to see the 12 zero-PII proofs pass.
+</details>
+
+<details>
+<summary><strong>I'm a student.</strong> What's the cool thing about this?</summary>
+
+The cool thing is that "privacy" usually means writing it in a contract
+and hoping nobody breaks it. Sovereign Vision makes it impossible to
+break, because there's no path through the code that lets the PII
+become an output. You can read every line of the firewall (it's about
+250 lines) and verify that yourself.
+
+The bonus cool thing is **the audit chain**. Each frame certificate
+gets chained to the previous one with a SHA-256 hash, and the whole
+session ends with a single Merkle root. If anyone edits even one
+certificate after the fact, the math breaks and the chain visibly
+fails verification. So the system isn't just "trust me" - it's
+"trust me, and here's the math that lets you prove it."
+
+Start with `sovereign/firewall.py` (the orchestrator). It's the
+shortest and most interesting file in the repo.
+</details>
+
+---
+
+## The constitution
+
+| ID | Name | Action | Severity | Legal basis |
+|---|---|---|---|---|
+| **SV-001** | Person Coordinate Redaction | REDACT | CRITICAL | GDPR Article 4(1) |
+| **SV-002** | Face Region Cryptographic Hash | HASH | CRITICAL | GDPR Article 9 |
+| **SV-003** | Individual Track ID Suppression | BLOCK | CRITICAL | GDPR Recital 30 |
+| **SV-004** | Zone Aggregate Only Output | AGGREGATE | HIGH | GDPR Article 89 |
+| **SV-005** | Confidence Floor Enforcement | BLOCK | HIGH | GDPR Article 22 |
+| **SV-006** | Sensitive Object Class Escalation | ESCALATE | MEDIUM | Enterprise Safety Protocol |
+| **SV-007** | Differential Privacy on Aggregates | AGGREGATE | HIGH | GDPR Art. 25 + NIST SP 800-188 |
+
+Full rule specification with legal commentary: [docs/CONSTITUTIONAL_RULES.md](docs/CONSTITUTIONAL_RULES.md).
+
+### Pre-built industry rule packs
+
+Drop in an industry rule pack on top of the default constitution:
+
+```bash
+sovereign packs                          # list installed packs
+```
+
+| Pack | Authority | Rules added |
+|---|---|---|
+| `hipaa` | HHS 45 CFR 164.514(b) | PHI Safe Harbor, restricted-zone escalation, min-necessary aggregation |
+| `osha` | OSHA 29 CFR 1910 | PPE tracking, forklift proximity, hazmat occupancy |
+| `retail` | CCPA / CPRA | Tightened DP epsilon (0.5), queue-length escalation, face-hash opt-out |
+| `transit` | EU DPB / APTA | Platform overcrowding, unattended-item detection |
+
+```python
+from sovereign.packs import load_pack
+from sovereign.firewall import ConstitutionalFirewall
+
+fw = ConstitutionalFirewall(rules=load_pack("hipaa"))    # default + HIPAA
+```
 
 ---
 
@@ -60,30 +204,12 @@ Adversary model: [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ---
 
-## The Constitution: Seven Rules
-
-| ID | Name | Action | Severity | Legal basis |
-|---|---|---|---|---|
-| **SV-001** | Person Coordinate Redaction | REDACT | CRITICAL | GDPR Article 4(1) |
-| **SV-002** | Face Region Cryptographic Hash | HASH | CRITICAL | GDPR Article 9 |
-| **SV-003** | Individual Track ID Suppression | BLOCK | CRITICAL | GDPR Recital 30 |
-| **SV-004** | Zone Aggregate Only Output | AGGREGATE | HIGH | GDPR Article 89 |
-| **SV-005** | Confidence Floor Enforcement | BLOCK | HIGH | GDPR Article 22 |
-| **SV-006** | Sensitive Object Class Escalation | ESCALATE | MEDIUM | Enterprise Safety Protocol |
-| **SV-007** | Differential Privacy on Aggregates | AGGREGATE | HIGH | GDPR Article 25 + NIST SP 800-188 |
-
-Full rule specification with legal commentary: [docs/CONSTITUTIONAL_RULES.md](docs/CONSTITUTIONAL_RULES.md).
-
----
-
-## Word choice matters
-
-Sovereign Vision is careful about who said what.
+## Word choice (because words matter)
 
 - **"Compliance certificate"** = a JSON file the system itself issues. It
   is *self-attested*, not third-party-certified. The integrity hash and
-  Merkle audit anchor are what make the claim *verifiable by a third
-  party after the fact*.
+  Merkle anchor are what make the claim *verifiable by a third party
+  after the fact*.
 - **Frame status `CLEAR`** = the frame passed every constitutional rule
   in force. We deliberately do not use `CERTIFIED` (loaded language).
 - **`ESCALATED`** = a sensitive-class rule fired. The frame still passes,
@@ -95,9 +221,40 @@ Sovereign Vision is careful about who said what.
   rule set; they are confirming the rule set was applied without
   modification.
 
+We never claim "verified by Sovereign Vision". We claim "the system
+attests to its own application of these rules, and here is the math that
+makes that attestation tamper-evident."
+
 ---
 
-## What the Enterprise Gets
+## Five ways to deploy this
+
+1. **Live demo on your Mac.** `sovereign demo`. The dashboard runs on
+   any Apple Silicon Mac with a webcam. No camera? Fall back to the
+   synthetic feed automatically.
+2. **Production on a Mac mini.** `sovereign demo --production`
+   suppresses the RAW panel and refuses the audited side channel. Wire
+   your cameras to USB or wired Ethernet, run in launchd, point the
+   webhook at your SIEM.
+3. **REST API.** `uvicorn sovereign.server:app --host 127.0.0.1
+   --port 8765` exposes `/verify`, `/stats`, `/metrics` (Prometheus),
+   `/packs`, and a `/live` WebSocket. Drop-in for any enterprise
+   integration.
+4. **As a GitHub Action.** Use `TheBarmaEffect/sovereign-vision@main`
+   as a release gate for any repo that handles vision data. Fails the
+   build if zero-PII proofs break.
+5. **As a Chrome extension.** Load [`tools/chrome-extension/`](tools/chrome-extension/)
+   as an unpacked extension. Anyone can drop a `session_*.json` into
+   the popup and verify the integrity hash and Merkle chain in two
+   clicks.
+
+There's also a [browser-based replay viewer](tools/replay.html) and a
+[standalone HTML verifier](tools/cert_viewer.html) for users who don't
+want to install anything.
+
+---
+
+## What the enterprise actually gets
 
 **Exists in the output:**
 - Zone occupancy counts (3x3 aggregated grid, with SV-007 DP noise)
@@ -107,7 +264,8 @@ Sovereign Vision is careful about who said what.
 - Sensitive object escalation flags
 - Per-frame compliance certificate (SHA-256 integrity hash)
 - Per-session Merkle audit anchor
-- Hardware fingerprint (chip, MLX version, OS) in the session cert
+- Compliance score (0-100, with breakdown)
+- Hardware fingerprint (chip, MLX version) in the session cert
 
 **NEVER exists, anywhere, ever:**
 - Individual bounding-box coordinates
@@ -126,7 +284,7 @@ exact hardware fingerprint on every render, and the session certificate
 records it for the audit trail:
 
 ```
-Apple M5 Pro  ·  5P+10E  ·  18 GPU  ·  16 Neural Engine  ·  24 GB unified
+Apple M5 Pro  ·  5P+10E  ·  18 GPU  ·  16 Neural Engine  ·  24 GB unified  ·  MLX 0.20 active
 ```
 
 - Inference runs on the GPU + Neural Engine through MLX (zero CUDA, zero TensorFlow)
@@ -139,72 +297,44 @@ of `run_demo.py` refuses to start when MLX is unavailable.
 
 ---
 
-## Live Demo
-
-![Sovereign Vision dashboard](assets/demo_screenshot.png)
-
-Three panels, live:
-
-1. **RAW INFERENCE** (left). What YOLO26 sees, with person regions
-   visibly tagged "PII". This panel is suppressed entirely in
-   `--production` mode.
-2. **CONSTITUTIONAL FIREWALL** (center). The seven rules firing in real
-   time. Each event card carries a timestamp, rule id, action, and
-   status. Status badge at the top reflects the latest frame.
-3. **ENTERPRISE OUTPUT** (right). What a compliance team actually sees:
-   3x3 zone heat map (with DP noise), PPE compliance, latest cert hash,
-   legal coverage badges, and the LIVE / ON-DEVICE / ZERO CLOUD
-   indicator with the live hardware fingerprint.
-
-A parallel Rich-powered terminal dashboard runs in the same process so
-screen recordings look great even with the terminal in view.
-
-A standalone **HTML certificate viewer** at [`tools/cert_viewer.html`](tools/cert_viewer.html)
-lets anyone drop a `session_*.json` into a browser to re-verify the
-integrity hash and Merkle chain offline. No server, no upload.
-
----
-
-## How to Run
+## How to use this, step by step
 
 ```bash
-# 1. Clone Sovereign Vision and the YOLO26 MLX base model
-git clone https://github.com/TheBarmaEffect/sovereign-vision.git
-cd sovereign-vision
-git clone https://github.com/thewebAI/yolo-mlx.git    # base model repo
+# 1. One-line install (Apple Silicon, Python 3.10+)
+curl -sSL https://raw.githubusercontent.com/TheBarmaEffect/sovereign-vision/main/install.sh | sh
 
-# 2. Set up the venv
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-pip install -e ./yolo-mlx
-pip install -e ./yolo-mlx[convert]
+# 2. cd in
+cd ~/sovereign-vision && source .venv/bin/activate
 
-# 3. Pull and convert YOLO26 weights to MLX
-cd yolo-mlx
-bash scripts/download_yolo26_models.sh
-yolo26 converters convert models/yolo26m.pt -o ../models/yolo26m.npz --verify
-cd ..
+# 3. Run diagnostics
+sovereign doctor
 
-# 4. Run the live demo (presenter mode, all three panels)
-python demo/run_demo.py
+# 4. Live demo (presenter mode, all three panels)
+sovereign demo
 
-# 5. Or production mode (left panel suppressed, no raw-preview side channel)
-python demo/run_demo.py --production
+# 5. Production mode (left panel suppressed)
+sovereign demo --production
 
-# Press Q in the window to quit and seal the session certificate.
-```
+# 6. Run constitutional proofs
+pytest tests/ -m constitutional -v
 
-If no camera is attached, the system falls back to a synthetic feed
-automatically. Judges can run the demo on any Mac with no hardware setup.
+# 7. Verify a session certificate
+sovereign verify certificates/session_*.json
 
-CLI:
+# 8. Read the compliance score
+sovereign score certificates/session_*.json
 
-```bash
-sovereign info                                     # version + rule summary
-sovereign rules                                    # full constitution as JSON
-sovereign verify certificates/session_*.json       # check integrity hash
-sovereign benchmark --frames 500                   # FPS + latency benchmark
+# 9. Generate a PDF compliance report
+python tools/report_pdf.py certificates/session_*.json -o report.pdf
+
+# 10. Start the REST API
+uvicorn sovereign.server:app --host 127.0.0.1 --port 8765
+
+# 11. List rule packs
+sovereign packs
+
+# 12. Run with HIPAA pack instead of default
+SOVEREIGN_PACK=hipaa sovereign demo
 ```
 
 ---
@@ -240,25 +370,22 @@ $ sovereign benchmark --frames 300
 
 ---
 
-## Enterprise Use Cases
+## Sovereign Vision vs the alternatives
 
-**Manufacturing - PPE compliance.** Continuous, aggregate-only PPE
-monitoring across the floor. OSHA-grade evidence without GDPR exposure
-or union friction.
-
-**Retail - Foot traffic analytics.** Dwell time, hotspots, conversion
-correlation, with zero individual tracking. No loyalty card, no cookie,
-no face recognition. CCPA-clean by design.
-
-**Healthcare - Hospital zone monitoring.** ED flow, ICU coverage,
-sensitive-area access alerts. HIPAA Safe Harbor satisfied at the
-algorithm layer.
-
-Full scenarios: [docs/ENTERPRISE_USE_CASES.md](docs/ENTERPRISE_USE_CASES.md).
+| | **Sovereign Vision** | Cloud anonymisation | Face-blur SDK | DIY post-hoc |
+|---|---|---|---|---|
+| PII reaches a server | Never | Yes (the whole point) | Optional | Often |
+| Per-individual track IDs | Never produced | Produced then stripped | Produced | Produced |
+| Audit trail | Per-frame cert + Merkle root | Vendor logs (closed) | None | Whatever you write |
+| GDPR Art 9 face data | Hashed at source | Sent to vendor | Pixelated post-hoc | Up to you |
+| Differential privacy | SV-007 (epsilon=1.0 default) | No | No | No |
+| Inspectable rule set | 7 short Python rules | Vendor T&Cs | Closed | Whatever you write |
+| Runs without internet | Yes | No | Yes | Yes |
+| Cost | Open source (AGPL-3.0) | Per-camera SaaS | Per-seat license | Engineering time |
 
 ---
 
-## The Research Foundation
+## The research foundation
 
 Sovereign Vision is a practical instantiation of the **Glass Box
 Framework**, a runtime constitutional AI verification system under
@@ -274,25 +401,7 @@ entire session.
 
 ---
 
-## Why On-Device Matters Here
-
-This is not a performance optimisation. On-device is the privacy
-guarantee.
-
-Data that never leaves the device cannot be:
-- Breached (no server to hack)
-- Subpoenaed (no data controller to compel)
-- Sold (no telemetry pipeline to monetise)
-- Mis-configured into a public S3 bucket
-- Reused for a purpose the data subject did not consent to
-
-MLX makes this practical at production frame rates on consumer Apple
-hardware. Sovereign Vision is the constitutional layer that makes it
-*legally usable*.
-
----
-
-## Constitutional Proofs
+## Constitutional proofs
 
 The repository ships with executable proofs of the zero-PII guarantee.
 
@@ -330,48 +439,81 @@ pytest tests/ -m constitutional -v
 
 ---
 
-## Project Layout
+## FAQ
 
-```
-sovereign-vision/
-+- sovereign/                 # core Python package
-|  +- rules.py                # the 7 constitutional rules
-|  +- redactor.py             # the only legal surface for PII
-|  +- aggregator.py           # aggregate-only zone metrics
-|  +- firewall.py             # the orchestrator
-|  +- certificate.py          # self-attested compliance certificates
-|  +- audit_chain.py          # tamper-evident Merkle chain
-|  +- detector.py             # YOLO26 MLX wrapper (firewall-mandatory)
-|  +- dp.py                   # SV-007 Laplace mechanism
-|  +- hardware.py             # Apple Silicon introspection
-|  +- config.py               # YAML config
-|  +- metrics.py              # perf + constitutional metrics
-|  +- cli.py                  # `sovereign` CLI
-+- dashboard/                 # 3-panel OpenCV UI + Rich terminal dashboard
-|  +- typography.py           # PIL/SF Pro premium text rendering
-|  +- gfx.py                  # rounded rects, gradients, soft glow
-|  +- styles.py               # Apple-inspired palette
-|  +- panels/
-|     +- raw_panel.py
-|     +- firewall_panel.py
-|     +- certified_panel.py
-|  +- app.py
-+- demo/                      # end-to-end demo + scenario configs
-+- tests/                     # 77 tests including constitutional proofs + hypothesis
-+- docs/
-|  +- ARCHITECTURE.md
-|  +- CONSTITUTIONAL_RULES.md
-|  +- ENTERPRISE_USE_CASES.md
-|  +- THREAT_MODEL.md
-+- benchmarks/                # FPS, dashboard render, architecture diagram
-+- tools/                     # cert_viewer.html browser-side verifier
-+- configs/                   # YAML scenario configs
-+- assets/                    # screenshots, architecture diagram
-```
+**Is this just face blurring?**
+No. Face blurring works on the imagery; it does nothing about bbox
+coordinates, track IDs, or face embeddings, which are all PII under
+GDPR. Sovereign Vision works at the metadata layer: the bbox never
+exists in a form anything but the firewall can see.
+
+**What about face data?** Faces are hashed at the source with SHA-256
+plus a per-session salt. The hash is irreversible and uncorrelatable
+across sessions.
+
+**Can I keep using my existing camera?** Yes. The system reads from
+any OpenCV-compatible camera. On a Mac mini, a $30 USB camera is
+sufficient.
+
+**What if MLX is not available?** A simulation backend ships for CI on
+Linux and Intel Macs. It cannot run in `--production` mode.
+
+**How do I add a custom rule?** Three lines. See "Adding custom rules"
+in [docs/CONSTITUTIONAL_RULES.md](docs/CONSTITUTIONAL_RULES.md).
+
+**How do I integrate with my SIEM?** Configure the [webhook
+subscriber](sovereign/webhooks.py) with your SIEM URL and an HMAC
+secret. ESCALATED and BLOCKED frames fire HMAC-signed POST events.
+
+**Is the GitHub Action useful for non-CV repos?** It's most useful as
+a constitutional-style release gate for any repo. The action's
+`compliance-score` output is a 0-100 number you can gate releases on.
+
+**Is this production-ready?** The constitutional layer is. The
+demo dashboard is a presentation tool. For real production, see the
+deployment checklist in
+[docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ---
 
-## Open Source
+## Roadmap
+
+- [x] Constitutional Firewall (SV-001..SV-007)
+- [x] Apple Silicon native via MLX
+- [x] Premium 3-panel dashboard with SF Pro typography
+- [x] Merkle audit chain
+- [x] HTML cert viewer + browser-side verification
+- [x] Chrome extension
+- [x] REST API server (FastAPI)
+- [x] GitHub Action
+- [x] PDF compliance report
+- [x] Session replay viewer
+- [x] Webhook system
+- [x] Rule packs (HIPAA, OSHA, retail, transit)
+- [ ] macOS menu bar app (rumps-based)
+- [ ] iOS app (MLX runs on iOS)
+- [ ] OBS virtual camera output (anonymised video stream)
+- [ ] External notary timestamping (RFC 3161)
+- [ ] Multi-camera consensus mode
+- [ ] Grafana datasource plugin
+- [ ] Homebrew tap (`brew install thebarmaeffect/tap/sovereign-vision`)
+- [ ] PyPI release
+
+---
+
+## Open source and pip install
+
+Once on PyPI you'll be able to:
+
+```bash
+pip install sovereign-vision
+```
+
+Today, from a clean checkout:
+
+```bash
+pip install -e .
+```
 
 Sovereign Vision is licensed under **AGPL-3.0**, matching the YOLO26 MLX
 upstream. The constitutional rule set is part of the licensed work: any
@@ -381,9 +523,9 @@ Privacy infrastructure should be inspectable.
 
 ---
 
-## About the Author
+## About the author
 
-**Karthik Barma** ·  MS Artificial Intelligence  ·  Northeastern University, Khoury College of Computer Sciences
+**Karthik Barma**  ·  MS Artificial Intelligence  ·  Northeastern University, Khoury College of Computer Sciences
 
 I build runtime-verifiable AI systems for high-stakes environments. My
 research thesis - the **Glass Box Framework** - argues that production
@@ -398,16 +540,16 @@ about constitutional verification, runtime audit, or the privacy
 guarantees of on-device inference, please reach out.
 
 - GitHub: [@TheBarmaEffect](https://github.com/TheBarmaEffect)
-- This project: [github.com/TheBarmaEffect/sovereign-vision](https://github.com/TheBarmaEffect/sovereign-vision)
+- Repo: [github.com/TheBarmaEffect/sovereign-vision](https://github.com/TheBarmaEffect/sovereign-vision)
 
 ---
 
 ## Acknowledgments
 
-- **Fatih Altay** and the webAI team for YOLO26 MLX, the foundation that
-  makes this demo possible at on-device speeds.
+- **Fatih Altay** and the webAI team for YOLO26 MLX, the foundation
+  that makes on-device inference at production frame rates possible.
 - **Hossein Moghimifam** for years of public arguments that *sovereign
-  AI* is not just a tagline, it is a contract.
+  AI* is not just a tagline; it is a contract.
 
-If you build on this work, open an issue. The constitution is public for
-a reason.
+If you build on this work, open an issue. The constitution is public
+for a reason.

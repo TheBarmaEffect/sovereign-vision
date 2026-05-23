@@ -1,0 +1,53 @@
+# Sovereign Vision rule pack: HIPAA (Healthcare).
+#
+# Layered on top of the SV-001..SV-007 default constitution. Adds rules
+# specific to PHI handling under 45 CFR Parts 160 and 164.
+#
+# Load with:
+#   from sovereign.packs import load_pack
+#   fw = ConstitutionalFirewall(rules=load_pack("hipaa"))
+
+pack:
+  name: "HIPAA Safe Harbor"
+  version: "1.0"
+  authority: "U.S. Department of Health and Human Services"
+  citation: "45 CFR 164.514(b)"
+  description: |
+    Enforces the Safe Harbor de-identification standard at the inference
+    layer. All 18 HIPAA identifiers are blocked at the source.
+
+rules:
+  - rule_id: SV-100
+    name: "PHI Identifier Suppression"
+    description: >
+      Per 45 CFR 164.514(b)(2)(i), the 18 HIPAA identifiers (names,
+      geographic subdivisions, dates, telephone, fax, email, SSN, MRN,
+      health plan beneficiary, account, certificate, vehicle, device,
+      URL, IP, biometric, face, any other unique identifier) must not
+      appear in de-identified data. Detections that could constitute
+      any of these classes are blocked.
+    applies_to: ["person"]
+    action: BLOCK
+    severity: CRITICAL
+    legal_basis: "HIPAA 45 CFR 164.514(b)(2)(i)"
+
+  - rule_id: SV-101
+    name: "Restricted Zone Access Escalation"
+    description: >
+      Pharmacy, MRI, secure psych unit, and other restricted areas
+      trigger an aggregate-only escalation event (no individual ID).
+    applies_to: ["person"]
+    action: ESCALATE
+    severity: HIGH
+    legal_basis: "Joint Commission EC.02.06.01"
+
+  - rule_id: SV-102
+    name: "Minimum Necessary Aggregation"
+    description: >
+      Aggregation window forced to 10 frames minimum to satisfy the
+      minimum-necessary standard for de-identified zone counts.
+    applies_to: ["*"]
+    action: AGGREGATE
+    severity: HIGH
+    legal_basis: "HIPAA Privacy Rule 45 CFR 164.502(b)"
+    aggregation_window: 10

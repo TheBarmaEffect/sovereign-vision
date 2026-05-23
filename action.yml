@@ -1,0 +1,76 @@
+name: "Sovereign Vision Constitutional Gate"
+description: >
+  Runs Sovereign Vision's zero-PII proof against any repo. Use this as a
+  release gate in your CI: fails the build if the constitutional rules
+  in your codebase leak PII fingerprints into any compliance certificate.
+author: "Karthik Barma <karthik@thebarmaeffect.dev>"
+branding:
+  icon: "shield"
+  color: "green"
+
+inputs:
+  python-version:
+    description: "Python version to use"
+    required: false
+    default: "3.12"
+  frames:
+    description: "Number of synthetic frames to run through the constitution"
+    required: false
+    default: "100"
+  fail-on-budget-exceeded:
+    description: "Fail the run if DP epsilon exceeds the per-frame budget"
+    required: false
+    default: "true"
+
+outputs:
+  compliance-score:
+    description: "0-100 compliance score from the synthetic run"
+    value: ${{ steps.gate.outputs.score }}
+  status:
+    description: "Overall status: CLEAR, ESCALATED, BLOCKED, or TAMPERED"
+    value: ${{ steps.gate.outputs.status }}
+  merkle-root:
+    description: "Merkle root of the audit chain from this run"
+    value: ${{ steps.gate.outputs.merkle }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Sovereign Vision (from this checkout)
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install numpy "opencv-python-headless>=4.10" rich pydantic structlog PyYAML pytest hypothesis matplotlib
+        pip install -e .
+
+    - name: Run constitutional zero-PII proofs (release gate)
+      shell: bash
+      run: pytest tests/ -m constitutional -v
+
+    - name: Run synthetic benchmark + emit session cert
+      id: gate
+      shell: bash
+      run: |
+        python demo/run_demo.py --headless --max-frames ${{ inputs.frames }} \
+            --output-dir certificates/gha
+        CERT=$(ls certificates/gha/session_*.json | head -1)
+        SCORE=$(python -c "import json,sys; d=json.load(open('$CERT')); print((d.get('compliance_score') or {}).get('score', 0))")
+        STATUS=$(python -c "import json,sys; d=json.load(open('$CERT')); print(d.get('overall_status', '-'))")
+        MERKLE=$(python -c "import json,sys; d=json.load(open('$CERT')); print((d.get('audit_chain') or {}).get('merkle_root', '-'))")
+        echo "score=$SCORE" >> $GITHUB_OUTPUT
+        echo "status=$STATUS" >> $GITHUB_OUTPUT
+        echo "merkle=$MERKLE" >> $GITHUB_OUTPUT
+        echo ""
+        echo "Compliance score: $SCORE"
+        echo "Status:           $STATUS"
+        echo "Merkle root:      $MERKLE"
+
+    - name: Upload session certificate as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sovereign-vision-session-cert
+        path: certificates/gha/session_*.json

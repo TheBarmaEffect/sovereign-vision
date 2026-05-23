@@ -1,0 +1,52 @@
+# Sovereign Vision rule pack: Retail Foot Traffic (CCPA/CPRA).
+#
+# Layered on top of SV-001..SV-007. Disables face hashing (overkill for
+# retail), tightens DP epsilon, and adds queue-length escalation.
+
+pack:
+  name: "Retail Foot Traffic"
+  version: "1.0"
+  authority: "California Consumer Privacy Act / Privacy Rights Act"
+  citation: "Cal. Civ. Code 1798.100 et seq."
+  description: |
+    Aggregate-only foot traffic, dwell time, hotspot, and queue
+    analytics with formally-bounded re-identification risk.
+
+rules:
+  - rule_id: SV-300
+    name: "Tightened DP Epsilon"
+    description: >
+      Lowers per-query epsilon to 0.5 for stricter privacy at the cost
+      of slightly noisier counts. Total session budget cap = 5.0.
+    applies_to: ["*"]
+    action: AGGREGATE
+    severity: HIGH
+    legal_basis: "CCPA + NIST SP 800-188"
+    metadata:
+      epsilon: 0.5
+      session_budget_cap: 5.0
+
+  - rule_id: SV-301
+    name: "Queue Length Escalation"
+    description: >
+      Checkout queue zone occupancy exceeding 5 triggers an aggregate
+      staffing alert (no customer ID).
+    applies_to: ["person"]
+    action: ESCALATE
+    severity: MEDIUM
+    legal_basis: "Internal operations policy"
+    metadata:
+      queue_threshold: 5
+
+  - rule_id: SV-302
+    name: "No Face Hashing (Retail Default)"
+    description: >
+      SV-002 default face hashing is unnecessary for retail analytics.
+      This rule overrides SV-002 by skipping the hashing pass entirely.
+      Zone occupancy and dwell remain aggregated normally.
+    applies_to: ["person"]
+    action: AGGREGATE
+    severity: MEDIUM
+    legal_basis: "CCPA minimisation principle"
+    metadata:
+      override: SV-002
