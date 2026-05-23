@@ -7,8 +7,8 @@
 ![Sovereign Vision dashboard](assets/demo_screenshot.png)
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
-[![PyPI](https://img.shields.io/badge/pip-sovereign--vision-3775A9.svg)](https://pypi.org/project/sovereign-vision/)
-[![Homebrew](https://img.shields.io/badge/brew-sovereign--vision-FBB040.svg)](homebrew/)
+[![PyPI](https://img.shields.io/pypi/v/sovereign-vision.svg?label=PyPI&color=3775A9)](https://pypi.org/project/sovereign-vision/)
+[![Homebrew tap](https://img.shields.io/badge/brew-TheBarmaEffect%2Fsovereign--vision--tap-FBB040.svg)](https://github.com/TheBarmaEffect/sovereign-vision-tap)
 [![MLX](https://img.shields.io/badge/MLX-Apple%20Silicon-FF9F0A.svg)](https://github.com/ml-explore/mlx)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-0A84FF.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Tests](https://img.shields.io/badge/tests-84%20passing-30D158.svg)](tests/)
@@ -22,6 +22,25 @@
 **Built by [Karthik Barma](https://github.com/TheBarmaEffect)**
 MS Artificial Intelligence  ·  Northeastern University, Khoury College of Computer Sciences
 Research: Glass Box Framework  ·  Runtime constitutional AI verification
+
+</div>
+
+<div align="center">
+
+### Try it in 10 seconds
+
+```bash
+pip install sovereign-vision
+sovereign demo
+```
+
+Or on macOS:
+
+```bash
+brew tap TheBarmaEffect/sovereign-vision-tap
+brew install sovereign-vision
+sovereign demo
+```
 
 </div>
 
@@ -235,9 +254,9 @@ makes that attestation tamper-evident."
 
 | Channel | One-liner |
 |---|---|
+| **pip from PyPI** (live) | `pip install sovereign-vision` |
+| **Homebrew tap** (live) | `brew tap TheBarmaEffect/sovereign-vision-tap && brew install sovereign-vision` |
 | pip from GitHub | `pip install git+https://github.com/TheBarmaEffect/sovereign-vision.git` |
-| pip from PyPI | `pip install sovereign-vision` |
-| Homebrew tap | `brew tap TheBarmaEffect/sovereign-vision-tap && brew install sovereign-vision` |
 | One-line installer | `curl -sSL https://raw.githubusercontent.com/TheBarmaEffect/sovereign-vision/main/install.sh \| sh` |
 | GitHub release | `pip install https://github.com/TheBarmaEffect/sovereign-vision/releases/download/v1.3.0/sovereign_vision-1.3.0-py3-none-any.whl` |
 | Docker | `docker run -v $PWD/certs:/data ghcr.io/thebarmaeffect/sovereign-vision:latest` |
