@@ -1,27 +1,36 @@
-"""Panel 3 — Certified Enterprise Output (right).
+"""Panel 3 - Enterprise Output (right).
 
-Shows the data your compliance team actually sees:
-  - 3x3 zone heat map (aggregate occupancy)
-  - PPE compliance rate
-  - Active zones / dwell time
-  - Sensitive objects flagged
-  - Latest certificate hash + audit chain info
-  - GDPR coverage badges
-  - LIVE / ON-DEVICE / ZERO CLOUD indicator
+Premium, Apple-grade rendering of the certified enterprise output. This is
+the panel a compliance team would see in production: a 3x3 zone heat map,
+the live PPE compliance rate, the most recent attestation hash, and the
+"LIVE / ON-DEVICE / ZERO CLOUD" guarantee.
+
+All metrics here are aggregate-only. Nothing on this panel references any
+individual.
 """
 from __future__ import annotations
-
-from typing import Any
 
 import cv2
 import numpy as np
 
+from dashboard import gfx
 from dashboard import styles as S
+from dashboard.typography import (
+    STYLE_BODY,
+    STYLE_BODY_SOFT,
+    STYLE_LABEL,
+    STYLE_METRIC_VAL,
+    STYLE_MONO,
+    STYLE_SUBTITLE,
+    STYLE_TITLE,
+    draw_text,
+    text_size,
+)
 from sovereign.firewall import FirewallResult
 from sovereign.redactor import ZONE_LABELS
 
-PANEL_TITLE = "CERTIFIED ENTERPRISE OUTPUT"
-PANEL_SUBTITLE = "What your compliance team actually sees"
+PANEL_TITLE = "ENTERPRISE OUTPUT"
+PANEL_SUBTITLE = "Self-attested  ·  Tamper-evident  ·  On-device"
 
 
 def render(
@@ -29,69 +38,56 @@ def render(
     cert_hash: str,
     last_cert_age_s: float,
     tick: int,
+    hardware_label: str = "",
 ) -> "np.ndarray":
     panel = _new_panel()
-    body = _draw_header(panel)
-    _draw_zone_heatmap(body, result)
-    _draw_metrics(body, result)
-    _draw_certificate_card(body, cert_hash, last_cert_age_s, result)
-    _draw_legal_badges(body)
-    _draw_live_indicator(body, tick)
-    _draw_panel_border(panel, S.COLOR_CERTIFIED)
+    _draw_header(panel)
+    _draw_zone_heatmap(panel, result)
+    _draw_metrics(panel, result)
+    _draw_attestation_card(panel, cert_hash, last_cert_age_s, result)
+    _draw_legal_badges(panel)
+    _draw_live_indicator(panel, tick, hardware_label)
+    _draw_panel_border(panel, S.APPLE_GREEN)
     return panel
 
 
 # ---------------------------------------------------------------------------
-# Components
+# Sections
 # ---------------------------------------------------------------------------
 
 
 def _new_panel() -> "np.ndarray":
     panel = np.zeros((S.PANEL_HEIGHT, S.PANEL_WIDTH, 3), dtype=np.uint8)
-    panel[:] = S.BG_PANEL
+    gfx.vertical_gradient(
+        panel,
+        (0, 0, S.PANEL_WIDTH, S.PANEL_HEIGHT),
+        top_color=S.BG_DEEP,
+        bot_color=S.BG_PANEL,
+    )
     return panel
 
 
-def _draw_header(panel: "np.ndarray") -> "np.ndarray":
+def _draw_header(panel: "np.ndarray") -> None:
     cv2.rectangle(panel, (0, 0), (S.PANEL_WIDTH, S.HEADER_HEIGHT), S.BG_HEADER, -1)
-    cv2.line(panel, (0, S.HEADER_HEIGHT), (S.PANEL_WIDTH, S.HEADER_HEIGHT), S.COLOR_CERTIFIED, 2)
-    cv2.putText(
-        panel,
-        f"+  {PANEL_TITLE}",
-        (16, 30),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_HEADER,
-        S.TEXT_PRIMARY,
-        S.FONT_THICKNESS_HEADER,
-    )
-    cv2.putText(
-        panel,
-        PANEL_SUBTITLE,
-        (16, 54),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_SECONDARY,
-        1,
-    )
-    return panel[S.HEADER_HEIGHT :]
+    cv2.line(panel, (0, S.HEADER_HEIGHT), (S.PANEL_WIDTH, S.HEADER_HEIGHT),
+             S.APPLE_GREEN, 2)
+    cv2.circle(panel, (S.PADDING_X + 6, 36), 6, S.APPLE_GREEN, -1)
+    draw_text(panel, PANEL_TITLE, (S.PADDING_X + 24, 18), STYLE_TITLE)
+    draw_text(panel, PANEL_SUBTITLE, (S.PADDING_X + 24, 46),
+              STYLE_SUBTITLE, color=(140, 155, 180))
 
 
 def _draw_panel_border(panel: "np.ndarray", color: tuple[int, int, int]) -> None:
     cv2.rectangle(panel, (0, 0), (S.PANEL_WIDTH - 1, S.PANEL_HEIGHT - 1), color, 1)
 
 
-def _draw_zone_heatmap(body: "np.ndarray", result: FirewallResult | None) -> None:
-    y0 = 12
-    cv2.putText(
-        body,
-        "ZONE OCCUPANCY (AGGREGATE)",
-        (16, y0 + 8),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_MUTED,
-        1,
-    )
-    grid_x, grid_y, grid_w, grid_h = 16, y0 + 18, S.PANEL_WIDTH - 32, 200
+def _draw_zone_heatmap(panel: "np.ndarray", result: FirewallResult | None) -> None:
+    x0 = S.PADDING_X
+    y0 = S.HEADER_HEIGHT + 14
+    draw_text(panel, "ZONE OCCUPANCY  (AGGREGATE)", (x0, y0), STYLE_LABEL)
+    y0 += 20
+    grid_w = S.PANEL_WIDTH - 2 * S.PADDING_X
+    grid_h = 180
     cell_w = grid_w // 3
     cell_h = grid_h // 3
 
@@ -101,50 +97,39 @@ def _draw_zone_heatmap(body: "np.ndarray", result: FirewallResult | None) -> Non
 
     for r, row in enumerate(ZONE_LABELS):
         for c, label in enumerate(row):
-            x = grid_x + c * cell_w
-            y = grid_y + r * cell_h
+            x = x0 + c * cell_w
+            y = y0 + r * cell_h
             count = zone_counts.get(label, 0)
             color = _heat_color(count)
-            cv2.rectangle(body, (x + 2, y + 2), (x + cell_w - 2, y + cell_h - 2), color, -1)
-            cv2.rectangle(
-                body,
-                (x + 2, y + 2),
-                (x + cell_w - 2, y + cell_h - 2),
-                S.BORDER_DIVIDER,
-                1,
+            gfx.rounded_rect(
+                panel,
+                (x + 3, y + 3, x + cell_w - 3, y + cell_h - 3),
+                radius=8,
+                fill=color,
+                outline=S.BORDER_SOFT,
+                outline_width=1,
             )
-            cv2.putText(
-                body,
-                str(count),
-                (x + cell_w // 2 - 6, y + cell_h // 2 + 8),
-                S.FONT_PRIMARY,
-                0.9,
-                S.TEXT_PRIMARY,
-                2,
+            label_short = label.replace("zone_", "")
+            count_str = str(count)
+            cw, _ = text_size(count_str, STYLE_METRIC_VAL)
+            draw_text(
+                panel,
+                count_str,
+                (x + (cell_w - cw) // 2, y + cell_h // 2 - 14),
+                STYLE_METRIC_VAL,
             )
-            cv2.putText(
-                body,
-                label.replace("zone_", ""),
-                (x + 6, y + cell_h - 6),
-                S.FONT_PRIMARY,
-                S.FONT_SCALE_SMALL,
-                S.TEXT_MUTED,
-                1,
+            draw_text(
+                panel, label_short, (x + 10, y + cell_h - 22),
+                STYLE_MONO, color=S.TEXT_TERTIARY,
             )
 
 
-def _draw_metrics(body: "np.ndarray", result: FirewallResult | None) -> None:
-    y = 248
-    cv2.putText(
-        body,
-        "LIVE METRICS",
-        (16, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_MUTED,
-        1,
-    )
-    y += 8
+def _draw_metrics(panel: "np.ndarray", result: FirewallResult | None) -> None:
+    x0 = S.PADDING_X
+    y0 = S.HEADER_HEIGHT + 220
+    draw_text(panel, "LIVE METRICS", (x0, y0), STYLE_LABEL)
+    y0 += 18
+
     ppe = result.ppe_compliance_rate if result is not None else 1.0
     active = result.active_zones if result is not None else 0
     sensitive = (
@@ -156,83 +141,81 @@ def _draw_metrics(body: "np.ndarray", result: FirewallResult | None) -> None:
         else 0.0
     )
 
-    _progress_bar(body, "PPE Compliance Rate", y + 20, ppe)
-    _kv(body, "Active Zones", f"{active}/9", y + 60)
-    _kv(body, "Avg Dwell (aggregate)", f"{avg_dwell:.2f}s", y + 80)
-    _kv(body, "Sensitive Objects", f"{sensitive} flagged", y + 100)
+    _progress_bar(panel, "PPE Compliance Rate", y0, ppe)
+    _kv_row(panel, "Active Zones",         f"{active}/9",          y0 + 44)
+    _kv_row(panel, "Avg Dwell (aggregate)", f"{avg_dwell:.2f}s",    y0 + 66)
+    _kv_row(panel, "Sensitive Objects",    f"{sensitive} flagged", y0 + 88)
 
 
-def _draw_certificate_card(
-    body: "np.ndarray",
+def _draw_attestation_card(
+    panel: "np.ndarray",
     cert_hash: str,
     last_cert_age_s: float,
     result: FirewallResult | None,
 ) -> None:
-    y = 388
-    cv2.putText(
-        body,
-        "COMPLIANCE CERTIFICATE",
-        (16, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_MUTED,
-        1,
-    )
-    y += 18
-    cv2.rectangle(body, (16, y), (S.PANEL_WIDTH - 16, y + 110), S.BG_CARD, -1)
-    cv2.rectangle(body, (16, y), (S.PANEL_WIDTH - 16, y + 110), S.COLOR_CERTIFIED, 1)
+    x0 = S.PADDING_X
+    y0 = S.HEADER_HEIGHT + 380
+    draw_text(panel, "ATTESTATION  (SELF-ISSUED, AUDIT-VERIFIABLE)",
+              (x0, y0), STYLE_LABEL)
+    y0 += 18
 
-    short = cert_hash[:16] + "..." if cert_hash else "-"
+    x1 = S.PANEL_WIDTH - S.PADDING_X
+    gfx.rounded_rect(panel, (x0, y0, x1, y0 + 116), radius=S.RADIUS_CARD,
+                     fill=S.BG_CARD, outline=S.APPLE_GREEN, outline_width=1)
+
+    short = cert_hash[:24] + "..." if cert_hash else "-"
     rules_count = len(result.rules_fired) if result is not None else 0
 
-    _kv(body, "Cert hash", short, y + 24, label_w=110)
-    _kv(body, "Last certified", f"{last_cert_age_s:.2f}s ago", y + 46, label_w=110)
-    _kv(body, "Rules applied", f"{rules_count} this frame", y + 68, label_w=110)
-    _kv(body, "PII stored", "NONE", y + 90, label_w=110, value_color=S.COLOR_CERTIFIED)
+    _kv_in_card(panel, "Cert hash",      short,                              y0 + 14)
+    _kv_in_card(panel, "Last certified", f"{last_cert_age_s:.2f}s ago",      y0 + 36)
+    _kv_in_card(panel, "Rules applied",  f"{rules_count} this frame",        y0 + 58)
+    _kv_in_card(panel, "PII stored",     "NONE",                             y0 + 80,
+                value_color=S.APPLE_GREEN)
 
 
-def _draw_legal_badges(body: "np.ndarray") -> None:
-    y = 528
-    cv2.putText(
-        body,
-        "LEGAL COVERAGE",
-        (16, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_MUTED,
-        1,
-    )
-    badges = ["GDPR Art.4", "Art.9", "Art.22", "Art.89", "CCPA"]
-    x = 16
-    for label in badges:
+def _draw_legal_badges(panel: "np.ndarray") -> None:
+    x0 = S.PADDING_X
+    y0 = S.HEADER_HEIGHT + 520
+    draw_text(panel, "LEGAL COVERAGE", (x0, y0), STYLE_LABEL)
+    y0 += 16
+    badges = [
+        ("GDPR Art.4",  S.APPLE_GREEN),
+        ("Art.9",       S.APPLE_GREEN),
+        ("Art.22",      S.APPLE_GREEN),
+        ("Art.89",      S.APPLE_GREEN),
+        ("CCPA",        S.APPLE_GREEN),
+        ("HIPAA SH",    S.APPLE_GREEN),
+    ]
+    x = x0
+    for label, color in badges:
         text = f"{label} OK"
-        (tw, th), _ = cv2.getTextSize(text, S.FONT_PRIMARY, 0.42, 1)
-        cv2.rectangle(
-            body, (x, y + 8), (x + tw + 16, y + th + 24), S.BG_CARD, -1
+        tw, _ = text_size(text, STYLE_BODY)
+        gfx.rounded_rect(
+            panel,
+            (x, y0 + 8, x + tw + 14, y0 + 32),
+            radius=S.RADIUS_BADGE,
+            fill=S.BG_CARD,
+            outline=color,
+            outline_width=1,
         )
-        cv2.rectangle(
-            body, (x, y + 8), (x + tw + 16, y + th + 24), S.COLOR_CERTIFIED, 1
-        )
-        cv2.putText(
-            body, text, (x + 8, y + th + 18), S.FONT_PRIMARY, 0.42, S.COLOR_CERTIFIED, 1
-        )
-        x += tw + 24
+        draw_text(panel, text, (x + 7, y0 + 11), STYLE_BODY, color=color)
+        x += tw + 22
 
 
-def _draw_live_indicator(body: "np.ndarray", tick: int) -> None:
-    y = body.shape[0] - 18
+def _draw_live_indicator(panel: "np.ndarray", tick: int, hw_label: str) -> None:
+    y0 = S.PANEL_HEIGHT - S.FOOTER_HEIGHT
+    cv2.rectangle(panel, (0, y0), (S.PANEL_WIDTH, S.PANEL_HEIGHT), S.BG_HEADER, -1)
+    cv2.line(panel, (0, y0), (S.PANEL_WIDTH, y0), S.BORDER_SOFT, 1)
     blink = (tick // 15) % 2 == 0
-    dot_color = S.COLOR_CERTIFIED if blink else S.BG_CARD
-    cv2.circle(body, (24, y - 4), 6, dot_color, -1)
-    cv2.putText(
-        body,
-        "LIVE  |  ON DEVICE  |  ZERO CLOUD",
-        (40, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_BODY,
-        S.COLOR_CERTIFIED,
-        1,
-    )
+    dot = S.APPLE_GREEN if blink else S.BG_CARD
+    cv2.circle(panel, (S.PADDING_X + 4, y0 + 18), 6, dot, -1)
+    draw_text(panel, "LIVE  ·  ON-DEVICE  ·  ZERO CLOUD",
+              (S.PADDING_X + 20, y0 + 10), STYLE_BODY, color=S.APPLE_GREEN)
+    if hw_label:
+        tw, _ = text_size(hw_label, STYLE_MONO)
+        draw_text(panel, hw_label,
+                  (S.PANEL_WIDTH - S.PADDING_X - tw, y0 + 12),
+                  STYLE_MONO, color=S.TEXT_SECONDARY)
 
 
 # ---------------------------------------------------------------------------
@@ -240,40 +223,45 @@ def _draw_live_indicator(body: "np.ndarray", tick: int) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _progress_bar(body: "np.ndarray", label: str, y: int, value: float) -> None:
-    cv2.putText(body, label, (16, y), S.FONT_PRIMARY, S.FONT_SCALE_BODY, S.TEXT_PRIMARY, 1)
-    pct_text = f"{value * 100:.0f}%"
-    cv2.putText(
-        body,
-        pct_text,
-        (S.PANEL_WIDTH - 60, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_BODY,
-        S.COLOR_CERTIFIED,
-        1,
-    )
-    bar_y = y + 10
-    cv2.rectangle(body, (16, bar_y), (S.PANEL_WIDTH - 16, bar_y + 8), S.BG_CARD, -1)
-    fill = int((S.PANEL_WIDTH - 32) * max(0.0, min(1.0, value)))
-    cv2.rectangle(body, (16, bar_y), (16 + fill, bar_y + 8), S.COLOR_CERTIFIED, -1)
+def _progress_bar(panel: "np.ndarray", label: str, y: int, value: float) -> None:
+    x0 = S.PADDING_X
+    x1 = S.PANEL_WIDTH - S.PADDING_X
+    draw_text(panel, label, (x0, y), STYLE_BODY)
+    pct = f"{value * 100:.0f}%"
+    tw, _ = text_size(pct, STYLE_BODY)
+    draw_text(panel, pct, (x1 - tw, y), STYLE_BODY, color=S.APPLE_GREEN)
+    bar_y = y + 22
+    gfx.rounded_rect(panel, (x0, bar_y, x1, bar_y + 8), radius=4,
+                     fill=S.BG_CARD)
+    fill_w = int((x1 - x0) * max(0.0, min(1.0, value)))
+    if fill_w > 0:
+        gfx.rounded_rect(panel, (x0, bar_y, x0 + fill_w, bar_y + 8),
+                         radius=4, fill=S.APPLE_GREEN)
 
 
-def _kv(
-    body: "np.ndarray",
+def _kv_row(panel: "np.ndarray", label: str, value: str, y: int) -> None:
+    x0 = S.PADDING_X
+    x1 = S.PANEL_WIDTH - S.PADDING_X
+    draw_text(panel, label, (x0, y), STYLE_BODY, color=S.TEXT_SECONDARY)
+    tw, _ = text_size(value, STYLE_BODY)
+    draw_text(panel, value, (x1 - tw, y), STYLE_BODY)
+
+
+def _kv_in_card(
+    panel: "np.ndarray",
     label: str,
     value: str,
     y: int,
-    label_w: int = 200,
-    value_color: tuple[int, int, int] = S.TEXT_PRIMARY,
+    value_color: tuple[int, int, int] | None = None,
 ) -> None:
-    cv2.putText(body, label, (24, y), S.FONT_PRIMARY, S.FONT_SCALE_BODY, S.TEXT_SECONDARY, 1)
-    cv2.putText(
-        body, value, (24 + label_w, y), S.FONT_PRIMARY, S.FONT_SCALE_BODY, value_color, 1
-    )
+    x0 = S.PADDING_X + 14
+    x1 = S.PANEL_WIDTH - S.PADDING_X - 14
+    draw_text(panel, label, (x0, y), STYLE_BODY, color=S.TEXT_SECONDARY)
+    tw, _ = text_size(value, STYLE_BODY if value_color is None else STYLE_BODY)
+    draw_text(panel, value, (x1 - tw, y), STYLE_BODY, color=value_color)
 
 
 def _heat_color(count: int) -> tuple[int, int, int]:
-    """Map a zone count to a heat-map color stop."""
     if count <= 0:
         return S.HEATMAP_STOPS[0]
     if count >= len(S.HEATMAP_STOPS):

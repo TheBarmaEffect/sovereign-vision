@@ -1,4 +1,4 @@
-"""SovereignDetector — YOLO26 MLX wrapper that *forces* every detection
+"""SovereignDetector - YOLO26 MLX wrapper that *forces* every detection
 through the Constitutional Firewall.
 
 Design invariant: there is no public method on this class that returns raw
@@ -53,15 +53,53 @@ class SovereignDetector:
             firewall.session_id,
         )
 
-    # -- the only public entrypoint -----------------------------------------
+    # -- the only public entrypoints ----------------------------------------
 
     def detect(self, frame: "np.ndarray") -> FirewallResult:
-        """Run YOLO26 MLX inference and immediately pipe through the firewall."""
+        """Run YOLO26 MLX inference and immediately pipe through the firewall.
+
+        Returns only the firewall result. The raw detections produced by the
+        model are local to this method and dropped before return.
+        """
+        result, _ = self._detect_with_raw(frame, expose_raw=False)
+        return result
+
+    def detect_with_raw_preview(
+        self, frame: "np.ndarray"
+    ) -> tuple[FirewallResult, list[RawDetection]]:
+        """Same as `detect`, but also returns the raw detections for the
+        dashboard's left-hand "RAW INFERENCE" panel.
+
+        IMPORTANT: this method is an explicit, audited side channel for
+        DEMO VISUALISATION ONLY. The raw detections returned here:
+
+          1. Are computed in the SAME inference call as the firewall result
+             (no second `predict()` invocation, no double-inference path).
+          2. Are intended to be consumed within the current render frame
+             and dropped immediately.
+          3. Are NEVER persisted, logged, or aggregated.
+          4. Are not used to construct any compliance artifact.
+
+        In a production deployment (`--production` flag on `run_demo.py`)
+        this method MUST NOT be called. The audit chain will record a
+        BLOCKED status if it is.
+        """
+        return self._detect_with_raw(frame, expose_raw=True)
+
+    def _detect_with_raw(
+        self, frame: "np.ndarray", expose_raw: bool
+    ) -> tuple[FirewallResult, list[RawDetection]]:
         infer_start_ns = time.perf_counter_ns()
         raw = self._run_inference(frame)
         inference_ms = (time.perf_counter_ns() - infer_start_ns) / 1e6
         self._inference_count += 1
         self._total_inference_ns += time.perf_counter_ns() - infer_start_ns
+
+        # Hand a snapshot to the dashboard side channel BEFORE the
+        # firewall consumes the list. The firewall does not mutate `raw`
+        # but we copy defensively so the dashboard cannot interact with
+        # the firewall's working state.
+        raw_preview = list(raw) if expose_raw else []
 
         result = self._firewall.process_frame(
             raw_detections=raw,
@@ -71,7 +109,7 @@ class SovereignDetector:
         )
         # Deliberately drop the reference to raw detections immediately.
         del raw
-        return result
+        return result, raw_preview
 
     # -- accessors -----------------------------------------------------------
 
@@ -101,7 +139,7 @@ class SovereignDetector:
         """
         if not self._model_path.exists():
             logger.warning(
-                "Model file %s not found — falling back to simulation backend",
+                "Model file %s not found - falling back to simulation backend",
                 self._model_path,
             )
             return _SimulationModel()
@@ -110,9 +148,9 @@ class SovereignDetector:
             # We import lazily so this module can be imported on machines
             # without MLX (e.g. CI runners) for the purpose of running tests.
             from yolo26mlx import YOLO  # type: ignore[import-not-found]
-        except Exception as exc:  # pragma: no cover — depends on env
+        except Exception as exc:  # pragma: no cover - depends on env
             logger.warning(
-                "yolo26mlx not importable (%s) — using simulation backend",
+                "yolo26mlx not importable (%s) - using simulation backend",
                 exc,
             )
             return _SimulationModel()
@@ -121,7 +159,7 @@ class SovereignDetector:
             model = YOLO(str(self._model_path))
             logger.info("YOLO26 MLX model loaded from %s", self._model_path)
             return model
-        except Exception as exc:  # pragma: no cover — depends on env
+        except Exception as exc:  # pragma: no cover - depends on env
             raise ModelLoadError(f"Failed to load YOLO26 MLX model: {exc}") from exc
 
     def _run_inference(self, frame: "np.ndarray") -> list[RawDetection]:
@@ -137,13 +175,13 @@ class SovereignDetector:
         try:
             results = self._model.predict(frame, conf=self._conf_threshold)
             return _yolo_results_to_raw(results)
-        except Exception as exc:  # pragma: no cover — depends on env
-            logger.error("YOLO predict failed: %s — returning empty detections", exc)
+        except Exception as exc:  # pragma: no cover - depends on env
+            logger.error("YOLO predict failed: %s - returning empty detections", exc)
             return []
 
 
 # ---------------------------------------------------------------------------
-# Simulation backend — runs anywhere, no MLX required
+# Simulation backend - runs anywhere, no MLX required
 # ---------------------------------------------------------------------------
 
 
@@ -170,7 +208,7 @@ class _SimulationModel:
         h, w = _shape_or_default(frame)
         detections: list[RawDetection] = []
 
-        # 1–4 persons drifting across the frame
+        # 1-4 persons drifting across the frame
         n_persons = self._rng.randint(1, 4)
         for i in range(n_persons):
             cx = ((self._tick * 7 + i * 137) % w) / float(w)

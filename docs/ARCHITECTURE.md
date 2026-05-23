@@ -1,10 +1,10 @@
-# Sovereign Vision — Architecture
+# Sovereign Vision - Architecture
 
 > **TL;DR**: Sovereign Vision sits between the YOLO26 MLX inference layer and
 > any output consumer. It enforces a six-rule constitution that converts raw
 > per-detection PII into aggregate, hashed, redacted, audit-chained output
 > *before any data is produced*. The constitution is not a policy that lives
-> in a document — it is code on the inference critical path.
+> in a document - it is code on the inference critical path.
 
 ---
 
@@ -27,7 +27,7 @@
 
 The single most important property of this pipeline is that the firewall is
 *not* optional middleware. `SovereignDetector` exposes exactly one public
-method — `detect(frame)` — and that method ALWAYS calls
+method - `detect(frame)` - and that method ALWAYS calls
 `ConstitutionalFirewall.process_frame()` before returning. There is no API
 surface that returns raw detections. The Python type system reflects this:
 `detect()` returns a `FirewallResult`, never a `list[RawDetection]`.
@@ -45,7 +45,7 @@ surface that returns raw detections. The Python type system reflects this:
 | [`sovereign.detector`](../sovereign/detector.py) | YOLO26 MLX wrapper | `SovereignDetector` |
 | [`sovereign.config`](../sovereign/config.py) | YAML-driven runtime config | `SovereignConfig` |
 | [`sovereign.metrics`](../sovereign/metrics.py) | FPS + constitutional metrics | `MetricsRegistry`, `MetricsSnapshot` |
-| [`sovereign.cli`](../sovereign/cli.py) | `sovereign` CLI subcommands | — |
+| [`sovereign.cli`](../sovereign/cli.py) | `sovereign` CLI subcommands | - |
 
 ## 3. The Constitutional Firewall
 
@@ -95,7 +95,7 @@ return FirewallResult(certified=certified, rules_fired=..., agg=frame_agg, ...)
 
 Severity ordering (`CRITICAL > HIGH > MEDIUM`) means SV-003 (track ID block)
 runs before SV-005 (confidence floor block). This guarantees that a track
-ID is dropped *even if* the detection is later allowed to pass — preventing
+ID is dropped *even if* the detection is later allowed to pass - preventing
 any code path where the track ID was visible to anything but the redactor.
 
 ### Why we don't "redact and then check confidence"
@@ -136,7 +136,7 @@ Anything outside this class that touches a bbox or a track ID is a bug.
 
 The redactor holds a per-session 16-byte salt from `os.urandom`. This salt
 is never persisted and never logged. Two sessions of the same camera feed
-on the same hardware produce different hashes — this prevents cross-session
+on the same hardware produce different hashes - this prevents cross-session
 correlation of even the hash digests.
 
 ## 5. Audit chain
@@ -160,7 +160,7 @@ The Merkle root at the end of a session is a single 256-bit value that
 collapses the entire session's compliance audit trail. It can be exported
 to an external notary, time-stamping service, or simply printed in a
 compliance report. If a regulator later requests the per-frame
-certificates, any tamper with even one entry breaks the chain — and the
+certificates, any tamper with even one entry breaks the chain - and the
 Merkle root no longer matches.
 
 ## 6. Why this design beats "anonymize after inference"
@@ -176,7 +176,7 @@ industry today. It is broken for three reasons:
 2. **Post-processing is reviewable as policy, not code.** Removing PII in a
    downstream step requires a legal team to trust that the post-processor
    was correctly configured, in every code path, every time. That's not a
-   guarantee — that's a hope.
+   guarantee - that's a hope.
 
 3. **It doesn't scale across engineers.** A future change to the
    downstream layer could introduce a regression that leaks PII. The
@@ -185,7 +185,7 @@ industry today. It is broken for three reasons:
 
 Sovereign Vision moves the GDPR boundary one step left. The bbox never
 exists in a form the rest of the system can see. There is no post-
-processor to trust — there's an unbreakable contract enforced by the type
+processor to trust - there's an unbreakable contract enforced by the type
 system and the firewall.
 
 ## 7. Performance
@@ -204,7 +204,7 @@ The firewall's overhead is dominated by SHA-256 hashing of person regions.
 Region bytes are bounded by the bbox size, and the per-frame cost is
 typically < 0.5 ms on M-series silicon.
 
-The Merkle audit chain costs an additional SHA-256 per frame — negligible
+The Merkle audit chain costs an additional SHA-256 per frame - negligible
 compared to inference.
 
 ## 8. Extending the constitution
@@ -251,7 +251,7 @@ duplicate IDs raise immediately at startup.
 
 - It does not anonymise the *raw video stream*. The camera frame itself
   still contains people. If you want anonymised video output, run a
-  separate pixelation/blur step downstream of the firewall — the firewall
+  separate pixelation/blur step downstream of the firewall - the firewall
   guarantees the *metadata* is PII-free, not the imagery.
 - It does not implement differential privacy on aggregates. Aggregates are
   raw counts in 3×3 zones; differential privacy is a separate hardening
@@ -260,6 +260,6 @@ duplicate IDs raise immediately at startup.
   persisted to disk; rotating, encrypting, or deleting them is an
   operational concern, not a constitutional one.
 
-These are deliberate scope decisions — Sovereign Vision is the *minimum
+These are deliberate scope decisions - Sovereign Vision is the *minimum
 sufficient* constitutional layer. Production deployments typically pair it
 with operational hardening on top.

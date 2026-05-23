@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sovereign Vision · Compliance Certificate Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root {
+    --bg-deep: #0a0b0e;
+    --bg-panel: #16181d;
+    --bg-card: #1c1f26;
+    --border: #2a2e37;
+    --text: #f5f7fa;
+    --text-soft: #98a1b0;
+    --text-dim: #6f7888;
+    --green: #30d158;
+    --blue: #0a84ff;
+    --amber: #ff9f0a;
+    --red: #ff453a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: linear-gradient(180deg, var(--bg-deep), var(--bg-panel));
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 32px 48px;
+  }
+  header { display: flex; align-items: baseline; gap: 16px; margin-bottom: 28px; }
+  header h1 { margin: 0; font-size: 28px; font-weight: 700; }
+  header .tag {
+    font-size: 11px; letter-spacing: 0.1em;
+    padding: 4px 10px; border-radius: 8px;
+    color: var(--green); border: 1px solid var(--green);
+  }
+  .sub { color: var(--text-soft); font-size: 14px; margin-bottom: 24px; }
+  .drop {
+    border: 1.5px dashed var(--border);
+    border-radius: 14px;
+    padding: 44px; text-align: center;
+    color: var(--text-soft); cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .drop.hover { border-color: var(--blue); color: var(--text); }
+  .drop input { display: none; }
+  .result { margin-top: 28px; display: none; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h3 { margin: 0 0 12px 0; font-size: 12px; letter-spacing: 0.08em;
+             text-transform: uppercase; color: var(--text-dim); }
+  .card .v { font-size: 18px; font-weight: 600; }
+  .card .v.green { color: var(--green); }
+  .card .v.amber { color: var(--amber); }
+  .card .v.red { color: var(--red); }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; }
+  th, td { padding: 10px 14px; text-align: left; font-size: 13px; }
+  th { color: var(--text-dim); font-weight: 600; letter-spacing: 0.05em;
+       text-transform: uppercase; font-size: 11px; border-bottom: 1px solid var(--border); }
+  tr td { border-bottom: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 6px;
+           font-size: 11px; font-weight: 600; letter-spacing: 0.05em; }
+  .badge.ok { background: rgba(48,209,88,0.12); color: var(--green); border: 1px solid var(--green); }
+  .badge.fail { background: rgba(255,69,58,0.12); color: var(--red); border: 1px solid var(--red); }
+  footer { margin-top: 48px; color: var(--text-dim); font-size: 12px; text-align: center; }
+  footer a { color: var(--text-soft); text-decoration: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sovereign Vision &middot; Compliance Certificate Viewer</h1>
+  <span class="tag">Self-issued &middot; Audit-verifiable</span>
+</header>
+<div class="sub">
+  Drop a <code>session_*.json</code> certificate to verify its integrity hash
+  and Merkle audit chain. Runs entirely in your browser. No upload, no
+  server, no telemetry.
+</div>
+
+<label class="drop" id="drop">
+  <input type="file" accept="application/json" id="file" />
+  <strong>Click to choose</strong> or drop a session_*.json file here.
+</label>
+
+<div class="result" id="result">
+  <div class="grid">
+    <div class="card"><h3>Status</h3><div class="v" id="status">-</div></div>
+    <div class="card"><h3>Session</h3><div class="v mono" id="session">-</div></div>
+    <div class="card"><h3>Duration</h3><div class="v" id="duration">-</div></div>
+    <div class="card"><h3>Frames</h3><div class="v" id="frames">-</div></div>
+    <div class="card"><h3>Persons counted</h3><div class="v" id="persons">-</div></div>
+    <div class="card"><h3>Chain length</h3><div class="v" id="chainlen">-</div></div>
+    <div class="card"><h3>Integrity hash</h3><div class="v mono" id="ihash">-</div></div>
+    <div class="card"><h3>Merkle root</h3><div class="v mono" id="merkle">-</div></div>
+    <div class="card"><h3>Verification</h3><div class="v" id="verify">-</div></div>
+  </div>
+
+  <table id="rules-table" style="display:none">
+    <thead>
+      <tr><th>Rule</th><th>Trigger count</th></tr>
+    </thead>
+    <tbody id="rules"></tbody>
+  </table>
+</div>
+
+<footer>
+  Built by <a href="https://github.com/TheBarmaEffect">Karthik Barma</a> &middot;
+  Glass Box Framework &middot; Northeastern University Khoury College of Computer Sciences.
+  <br />
+  Source: <a href="https://github.com/TheBarmaEffect/sovereign-vision">github.com/TheBarmaEffect/sovereign-vision</a>.
+</footer>
+
+<script>
+const drop = document.getElementById("drop");
+const file = document.getElementById("file");
+const result = document.getElementById("result");
+
+["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.add("hover");
+}));
+["dragleave","drop"].forEach(e => drop.addEventListener(e, ev => {
+  ev.preventDefault(); drop.classList.remove("hover");
+}));
+drop.addEventListener("drop", async (ev) => {
+  const f = ev.dataTransfer.files[0];
+  if (f) await handle(f);
+});
+file.addEventListener("change", async () => {
+  if (file.files[0]) await handle(file.files[0]);
+});
+
+async function handle(f) {
+  const text = await f.text();
+  let data;
+  try { data = JSON.parse(text); }
+  catch (e) { alert("Not valid JSON"); return; }
+
+  result.style.display = "block";
+
+  // Status
+  const status = data.overall_status || "-";
+  const sEl = document.getElementById("status");
+  sEl.textContent = status;
+  sEl.className = "v " + (status === "CLEAR" ? "green" :
+                           status === "ESCALATED" ? "amber" :
+                           status === "TAMPERED" ? "red" : "");
+
+  document.getElementById("session").textContent = (data.session_id || "-").slice(0, 8);
+  document.getElementById("duration").textContent = (data.duration_seconds ?? 0).toFixed(2) + "s";
+  document.getElementById("frames").textContent = data.total_frames ?? "-";
+  document.getElementById("persons").textContent = data.total_persons_counted ?? "-";
+  document.getElementById("chainlen").textContent =
+    data.audit_chain ? data.audit_chain.chain_length : "-";
+  document.getElementById("ihash").textContent =
+    (data.integrity_hash || "-").slice(0, 24) + "...";
+  document.getElementById("merkle").textContent =
+    data.audit_chain ? (data.audit_chain.merkle_root || "-").slice(0, 24) + "..." : "-";
+
+  // Verify integrity hash by re-deriving it
+  const ok = await verifyIntegrity(data);
+  const vEl = document.getElementById("verify");
+  vEl.innerHTML = ok
+    ? '<span class="badge ok">OK · integrity hash matches</span>'
+    : '<span class="badge fail">FAILED · hash mismatch</span>';
+
+  // Rule trigger table
+  const tbody = document.getElementById("rules");
+  tbody.innerHTML = "";
+  const triggered = data.rules_triggered || {};
+  if (Object.keys(triggered).length) {
+    document.getElementById("rules-table").style.display = "table";
+    Object.entries(triggered).sort().forEach(([k, v]) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="mono">${k}</td><td>${v}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+async function verifyIntegrity(data) {
+  const stored = data.integrity_hash;
+  if (!stored) return false;
+  const copy = JSON.parse(JSON.stringify(data));
+  delete copy.integrity_hash;
+  const canonical = JSON.stringify(sortKeys(copy));
+  const bytes = new TextEncoder().encode(canonical);
+  const buf = await crypto.subtle.digest("SHA-256", bytes);
+  const hex = Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, "0")).join("");
+  return hex === stored;
+}
+
+// Recursively sort object keys to match Python's json.dumps(sort_keys=True)
+function sortKeys(v) {
+  if (Array.isArray(v)) return v.map(sortKeys);
+  if (v && typeof v === "object") {
+    return Object.keys(v).sort().reduce((acc, k) => {
+      acc[k] = sortKeys(v[k]);
+      return acc;
+    }, {});
+  }
+  return v;
+}
+</script>
+</body>
+</html>

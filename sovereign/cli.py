@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="sovereign",
-        description="Sovereign Vision — Constitutional Firewall for on-device CV.",
+        description="Sovereign Vision - Constitutional Firewall for on-device CV.",
     )
     parser.add_argument("--version", action="version", version=f"sovereign {__version__}")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -68,7 +68,7 @@ def _cmd_info() -> int:
     for rule in DEFAULT_RULES:
         print(f"  {rule.rule_id}  [{rule.severity.value:<8}]  {rule.name}")
     print()
-    print("Research: Glass Box Framework — Northeastern University, Khoury College.")
+    print("Research: Glass Box Framework - Northeastern University, Khoury College.")
     return 0
 
 

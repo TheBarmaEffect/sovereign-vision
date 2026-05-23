@@ -1,9 +1,9 @@
-"""Panel 2 — Constitutional Firewall (center).
+"""Panel 2 - Constitutional Firewall (center).
 
-Live scrolling log of rule events. Shows the firewall doing its work in
-real time — each card has a timestamp, rule id, action, and pass/applied
-status. A large status badge at the top reflects the latest frame's
-constitutional status.
+Premium, Apple-grade rendering of the live rule event log. The center panel
+is the visual centerpiece of the demo: it shows the firewall doing its work
+in real time. Each rule event is rendered as a card with a status dot, a
+rule id pill, the action taken, and a pass/applied state.
 """
 from __future__ import annotations
 
@@ -14,15 +14,26 @@ from typing import Iterable
 import cv2
 import numpy as np
 
+from dashboard import gfx
 from dashboard import styles as S
+from dashboard.typography import (
+    STYLE_BODY,
+    STYLE_BODY_SOFT,
+    STYLE_HERO,
+    STYLE_LABEL,
+    STYLE_MONO,
+    STYLE_SUBTITLE,
+    STYLE_TITLE,
+    draw_text,
+)
 from sovereign.firewall import FirewallResult, RuleEvent
 
 PANEL_TITLE = "CONSTITUTIONAL FIREWALL"
-PANEL_SUBTITLE = "Glass Box Runtime Verification"
+PANEL_SUBTITLE = "Glass Box runtime verification  ·  on-device"
 
 
 class FirewallPanelState:
-    """Stores rolling rule log + per-second trigger histogram."""
+    """Rolling rule log + per-second trigger histogram."""
 
     def __init__(self, max_visible: int = S.RULE_LOG_MAX_VISIBLE) -> None:
         self.events: deque[tuple[float, RuleEvent]] = deque(maxlen=max_visible * 3)
@@ -30,7 +41,7 @@ class FirewallPanelState:
         self.this_second_count: int = 0
         self.last_second: int = -1
         self.total_rules_applied: int = 0
-        self.last_status: str = "CERTIFIED"
+        self.last_status: str = "CLEAR"
         self.session_id: str = "-"
 
     def ingest(self, ts_seconds: float, result: FirewallResult) -> None:
@@ -55,154 +66,147 @@ class FirewallPanelState:
 
 def render(state: FirewallPanelState) -> "np.ndarray":
     panel = _new_panel()
-    body = _draw_header(panel)
-    _draw_status_badge(body, state.last_status, state.total_rules_applied)
-    _draw_event_log(body, state.events)
-    _draw_histogram(body, state.per_second_counts)
-    _draw_footer(body, state.session_id, state.total_rules_applied)
-    _draw_panel_border(panel, S.COLOR_ACCENT)
+    _draw_header(panel)
+    _draw_status_badge(panel, state.last_status, state.total_rules_applied)
+    _draw_event_log(panel, state.events)
+    _draw_histogram(panel, state.per_second_counts)
+    _draw_footer(panel, state.session_id, state.total_rules_applied)
+    _draw_panel_border(panel, S.APPLE_BLUE)
     return panel
 
 
 # ---------------------------------------------------------------------------
-# Components
+# Sections
 # ---------------------------------------------------------------------------
 
 
 def _new_panel() -> "np.ndarray":
     panel = np.zeros((S.PANEL_HEIGHT, S.PANEL_WIDTH, 3), dtype=np.uint8)
-    panel[:] = S.BG_PANEL
+    gfx.vertical_gradient(
+        panel,
+        (0, 0, S.PANEL_WIDTH, S.PANEL_HEIGHT),
+        top_color=S.BG_DEEP,
+        bot_color=S.BG_PANEL,
+    )
     return panel
 
 
-def _draw_header(panel: "np.ndarray") -> "np.ndarray":
+def _draw_header(panel: "np.ndarray") -> None:
     cv2.rectangle(panel, (0, 0), (S.PANEL_WIDTH, S.HEADER_HEIGHT), S.BG_HEADER, -1)
-    cv2.line(panel, (0, S.HEADER_HEIGHT), (S.PANEL_WIDTH, S.HEADER_HEIGHT), S.COLOR_ACCENT, 2)
-    cv2.putText(
-        panel,
-        f"o  {PANEL_TITLE}",
-        (16, 30),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_HEADER,
-        S.TEXT_PRIMARY,
-        S.FONT_THICKNESS_HEADER,
-    )
-    cv2.putText(
-        panel,
-        PANEL_SUBTITLE,
-        (16, 54),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_SECONDARY,
-        1,
-    )
-    return panel[S.HEADER_HEIGHT :]
+    cv2.line(panel, (0, S.HEADER_HEIGHT), (S.PANEL_WIDTH, S.HEADER_HEIGHT),
+             S.APPLE_BLUE, 2)
+    cv2.circle(panel, (S.PADDING_X + 6, 36), 6, S.APPLE_BLUE, -1)
+    draw_text(panel, PANEL_TITLE, (S.PADDING_X + 24, 18), STYLE_TITLE)
+    draw_text(panel, PANEL_SUBTITLE, (S.PADDING_X + 24, 46),
+              STYLE_SUBTITLE, color=(140, 155, 180))
 
 
 def _draw_panel_border(panel: "np.ndarray", color: tuple[int, int, int]) -> None:
     cv2.rectangle(panel, (0, 0), (S.PANEL_WIDTH - 1, S.PANEL_HEIGHT - 1), color, 1)
 
 
-def _draw_status_badge(body: "np.ndarray", status: str, total: int) -> None:
+def _draw_status_badge(panel: "np.ndarray", status: str, total: int) -> None:
     color = {
-        "CERTIFIED": S.COLOR_CERTIFIED,
-        "ESCALATED": S.COLOR_ESCALATED,
-        "BLOCKED": S.COLOR_BLOCKED,
-    }.get(status, S.COLOR_CERTIFIED)
-    icon = {"CERTIFIED": "[C]", "ESCALATED": "[!]", "BLOCKED": "[X]"}.get(status, "[C]")
+        "CLEAR":     S.APPLE_GREEN,
+        "ESCALATED": S.APPLE_AMBER,
+        "BLOCKED":   S.APPLE_RED,
+    }.get(status, S.APPLE_GREEN)
 
-    x0, y0, x1, y1 = 16, 16, S.PANEL_WIDTH - 16, 82
-    cv2.rectangle(body, (x0, y0), (x1, y1), S.BG_CARD, -1)
-    cv2.rectangle(body, (x0, y0), (x1, y1), color, 2)
-    label = f"{icon}  {status}"
-    cv2.putText(body, label, (x0 + 18, y0 + 42), S.FONT_PRIMARY, 0.9, color, 2)
-    sub = f"{total} rules applied this session   |   Zero PII passed: yes"
-    cv2.putText(body, sub, (x0 + 18, y1 - 10), S.FONT_PRIMARY, 0.42, S.TEXT_SECONDARY, 1)
+    x0 = S.PADDING_X
+    y0 = S.HEADER_HEIGHT + 14
+    x1 = S.PANEL_WIDTH - S.PADDING_X
+    y1 = y0 + 84
+
+    gfx.soft_glow(panel, (x0, y0, x1, y1), color, blur_radius=12, intensity=0.25)
+    gfx.rounded_rect(panel, (x0, y0, x1, y1), radius=S.RADIUS_CARD,
+                     fill=S.BG_CARD, outline=color, outline_width=1)
+
+    cv2.circle(panel, (x0 + 24, y0 + 32), 6, color, -1)
+    draw_text(panel, status, (x0 + 40, y0 + 14), STYLE_HERO, color=color)
+
+    sub = f"{total} rules applied this session   ·   zero PII passed"
+    draw_text(panel, sub, (x0 + 24, y0 + 56), STYLE_BODY_SOFT)
 
 
-def _draw_event_log(body: "np.ndarray", events: Iterable[tuple[float, RuleEvent]]) -> None:
-    y = 100
-    cv2.putText(
-        body,
-        "LIVE RULE EVENTS",
-        (16, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SUBHEADER,
-        S.TEXT_MUTED,
-        1,
-    )
-    y += 10
-    row_h = 28
+def _draw_event_log(
+    panel: "np.ndarray", events: Iterable[tuple[float, RuleEvent]]
+) -> None:
+    x0 = S.PADDING_X
+    y = S.HEADER_HEIGHT + 114
+    draw_text(panel, "LIVE RULE EVENTS", (x0, y), STYLE_LABEL)
+    y += 22
+
+    row_h = 30
     max_rows = S.RULE_LOG_MAX_VISIBLE
     for i, (ts, ev) in enumerate(list(events)[:max_rows]):
-        row_y = y + i * row_h
-        _draw_event_row(body, row_y, ts, ev, fade=i / max(max_rows, 1))
+        _draw_event_row(panel, x0, S.PANEL_WIDTH - S.PADDING_X,
+                        y + i * row_h, ts, ev, fade=i / max(max_rows, 1))
 
 
 def _draw_event_row(
-    body: "np.ndarray", y: int, ts: float, ev: RuleEvent, fade: float
+    panel: "np.ndarray",
+    x0: int,
+    x1: int,
+    y: int,
+    ts: float,
+    ev: RuleEvent,
+    fade: float,
 ) -> None:
-    fade_factor = max(0.35, 1.0 - 0.5 * fade)
+    fade_factor = max(0.45, 1.0 - 0.5 * fade)
     color = {
-        "REDACT": S.COLOR_CERTIFIED,
-        "HASH": S.COLOR_CERTIFIED,
-        "AGGREGATE": S.COLOR_CERTIFIED,
-        "BLOCK": S.COLOR_BLOCKED if ev.blocked else S.COLOR_CERTIFIED,
-        "ESCALATE": S.COLOR_ESCALATED,
+        "REDACT":    S.APPLE_GREEN,
+        "HASH":      S.APPLE_GREEN,
+        "AGGREGATE": S.APPLE_GREEN,
+        "BLOCK":     S.APPLE_RED if ev.blocked else S.APPLE_GREEN,
+        "ESCALATE":  S.APPLE_AMBER,
     }.get(ev.action, S.TEXT_PRIMARY)
-    color = tuple(int(c * fade_factor) for c in color)
+    color = S.with_alpha(color, fade_factor)
+    text_color = S.with_alpha(S.TEXT_PRIMARY, fade_factor)
+    soft_color = S.with_alpha(S.TEXT_SECONDARY, fade_factor)
 
-    cv2.rectangle(body, (16, y - 2), (S.PANEL_WIDTH - 16, y + 22), S.BG_PANEL_ALT, -1)
-    cv2.line(body, (16, y + 22), (S.PANEL_WIDTH - 16, y + 22), S.BORDER_DIVIDER, 1)
+    gfx.rounded_rect(panel, (x0, y, x1, y + 26), radius=6,
+                     fill=S.BG_CARD, alpha=fade_factor * 0.85)
 
     ts_str = datetime.fromtimestamp(ts).strftime("%H:%M:%S.%f")[:-3]
-    text_color = tuple(int(c * fade_factor) for c in S.TEXT_PRIMARY)
 
-    cv2.putText(body, ts_str, (24, y + 16), S.FONT_PRIMARY, 0.38, text_color, 1)
-    cv2.putText(body, ev.rule_id, (130, y + 16), S.FONT_PRIMARY, 0.42, color, 1)
-    cv2.putText(body, ev.rule_name[:22], (200, y + 16), S.FONT_PRIMARY, 0.4, text_color, 1)
-    cv2.putText(body, ev.action, (430, y + 16), S.FONT_PRIMARY, 0.42, color, 1)
-    status_text = "blocked" if ev.blocked else "applied"
-    cv2.putText(body, status_text, (S.PANEL_WIDTH - 96, y + 16), S.FONT_PRIMARY, 0.4, color, 1)
+    draw_text(panel, ts_str, (x0 + 10, y + 6), STYLE_MONO, color=soft_color)
+    draw_text(panel, ev.rule_id, (x0 + 100, y + 5), STYLE_BODY, color=color)
+    draw_text(panel, ev.rule_name[:30], (x0 + 158, y + 6), STYLE_BODY,
+              color=text_color)
+    draw_text(panel, ev.action, (x1 - 170, y + 6), STYLE_BODY, color=color)
+    draw_text(panel, "blocked" if ev.blocked else "applied",
+              (x1 - 80, y + 6), STYLE_BODY, color=color)
 
 
-def _draw_histogram(body: "np.ndarray", counts: Iterable[int]) -> None:
-    base_y = S.PANEL_HEIGHT - S.HEADER_HEIGHT - 72
-    cv2.putText(
-        body,
-        "RULES TRIGGERED PER SECOND",
-        (16, base_y - 6),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SMALL,
-        S.TEXT_MUTED,
-        1,
-    )
+def _draw_histogram(panel: "np.ndarray", counts: Iterable[int]) -> None:
+    base_y = S.PANEL_HEIGHT - S.FOOTER_HEIGHT - 80
+    x0 = S.PADDING_X
+    draw_text(panel, "RULES TRIGGERED PER SECOND", (x0, base_y),
+              STYLE_LABEL)
+    base_y += 18
     bars = list(counts)
     if not bars:
         return
-    width = S.PANEL_WIDTH - 32
-    bar_w = max(2, width // max(len(bars), 1))
+    width = S.PANEL_WIDTH - 2 * S.PADDING_X
+    bar_w = max(2, (width - len(bars)) // max(len(bars), 1))
     max_v = max(bars + [1])
     for i, v in enumerate(bars):
-        h = int(40 * v / max_v)
-        x = 16 + i * bar_w
-        cv2.rectangle(
-            body,
-            (x, base_y + 40 - h),
-            (x + bar_w - 1, base_y + 40),
-            S.COLOR_ACCENT,
-            -1,
+        bh = int(50 * v / max_v)
+        x = x0 + i * (bar_w + 1)
+        gfx.rounded_rect(
+            panel,
+            (x, base_y + 50 - bh, x + bar_w, base_y + 50),
+            radius=2,
+            fill=S.APPLE_BLUE,
+            alpha=0.85,
         )
 
 
-def _draw_footer(body: "np.ndarray", session_id: str, total: int) -> None:
-    y = body.shape[0] - 12
-    cv2.putText(
-        body,
-        f"session {session_id[:18]}  |  total rules: {total}",
-        (16, y),
-        S.FONT_PRIMARY,
-        S.FONT_SCALE_SMALL,
-        S.TEXT_MUTED,
-        1,
-    )
+def _draw_footer(panel: "np.ndarray", session_id: str, total: int) -> None:
+    y0 = S.PANEL_HEIGHT - S.FOOTER_HEIGHT
+    cv2.rectangle(panel, (0, y0), (S.PANEL_WIDTH, S.PANEL_HEIGHT), S.BG_HEADER, -1)
+    cv2.line(panel, (0, y0), (S.PANEL_WIDTH, y0), S.BORDER_SOFT, 1)
+    sid = session_id[:8] if session_id and session_id != "-" else "-"
+    text = f"session {sid}   ·   {total} rules applied"
+    draw_text(panel, text, (S.PADDING_X, y0 + 12), STYLE_MONO,
+              color=S.TEXT_SECONDARY)

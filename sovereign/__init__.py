@@ -1,4 +1,4 @@
-"""Sovereign Vision — on-device enterprise computer vision with a Constitutional Firewall.
+"""Sovereign Vision - on-device enterprise computer vision with a Constitutional Firewall.
 
 This package implements the Glass Box Framework for computer vision: every raw
 YOLO26 detection is intercepted by a constitutional rule set before it can ever

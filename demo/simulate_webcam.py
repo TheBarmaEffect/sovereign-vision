@@ -1,4 +1,4 @@
-"""Synthetic webcam — used when no physical camera is detected.
+"""Synthetic webcam - used when no physical camera is detected.
 
 Generates a smooth animated BGR frame stream with moving rectangles that
 roughly correspond to the synthetic detections produced by the simulation
@@ -42,7 +42,7 @@ class SyntheticCamera:
         self._tick: int = 0
         self._opened: bool = True
 
-    def isOpened(self) -> bool:  # noqa: N802 — cv2 API
+    def isOpened(self) -> bool:  # noqa: N802 - cv2 API
         return self._opened
 
     def read(self) -> tuple[bool, "np.ndarray"]:

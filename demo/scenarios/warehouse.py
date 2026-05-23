@@ -1,4 +1,4 @@
-"""Warehouse — zone monitoring and forklift-proximity scenario.
+"""Warehouse - zone monitoring and forklift-proximity scenario.
 
 Warehouse logistics wants:
   - Occupancy by zone for OSHA forklift safety distance
@@ -16,7 +16,7 @@ from demo.scenarios import Scenario
 def scenario() -> Scenario:
     return Scenario(
         name="warehouse",
-        title="Warehouse — Zone Monitoring & Equipment Proximity",
+        title="Warehouse - Zone Monitoring & Equipment Proximity",
         description=(
             "Aggregate proximity events between people and equipment in a "
             "logistics environment. Used for OSHA forklift safety auditing "

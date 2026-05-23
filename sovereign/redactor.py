@@ -1,7 +1,7 @@
 """PII redaction engine.
 
 Every primitive that touches PII lives here. The rest of the codebase calls
-into this module so there is exactly one place where redaction happens — the
+into this module so there is exactly one place where redaction happens - the
 firewall is then easy to audit: if a code path bypasses `PIIRedactor`, it
 shows up immediately.
 
@@ -122,7 +122,7 @@ class PIIRedactor:
     ) -> RedactedBbox:
         """Return a zero-coordinate bbox. Original coords are not retained."""
         # We deliberately do not store `bbox`. The argument is consumed and
-        # discarded — Python's gc will handle the reference; we hold none.
+        # discarded - Python's gc will handle the reference; we hold none.
         _ = bbox  # not stored
         _ = frame_shape  # not stored
         self._redactions_performed += 1
@@ -172,7 +172,7 @@ class PIIRedactor:
         """Run the full redaction pipeline for a single detection.
 
         Returns an AnonDetection that is safe to aggregate. The caller MUST
-        discard the raw detection after this call — there is no API to
+        discard the raw detection after this call - there is no API to
         retrieve the original bbox from an AnonDetection.
         """
         zone_id = self._zone_for_bbox(bbox, frame_shape)
@@ -208,7 +208,7 @@ class PIIRedactor:
         """Map a bbox to a 3x3 zone label using only its rough quadrant.
 
         We deliberately quantise to a 3x3 grid so the spatial information
-        leaving this function is coarse-grained — coarse enough that the
+        leaving this function is coarse-grained - coarse enough that the
         SV-004 aggregation rule's anonymisation guarantee holds.
         """
         if len(frame_shape) >= 2:
@@ -241,8 +241,15 @@ def _generate_session_salt() -> bytes:
 
 
 def _extract_region_bytes(frame: Any, x: int, y: int, w: int, h: int) -> bytes:
-    """Best-effort region extraction. Works with numpy arrays and falls back
-    gracefully when frame is a placeholder (e.g. during unit tests).
+    """Best-effort region extraction. Works with numpy arrays.
+
+    Loophole closed: a previous version of this function fell back to
+    encoding the bbox coordinates (x, y, w, h) into the hasher input when
+    no numpy array was present. That meant the bbox survived as PII inside
+    the hash domain. The current implementation refuses to construct a
+    region from coordinates: if the frame is not a numpy array, the region
+    is treated as opaque entropy (16 bytes from os.urandom). The resulting
+    hash is therefore uncorrelatable with any spatial information.
     """
     try:
         import numpy as np  # local import keeps top-level import light
@@ -257,8 +264,12 @@ def _extract_region_bytes(frame: Any, x: int, y: int, w: int, h: int) -> bytes:
                 return b""
             region = frame[y:y2, x:x2]
             return bytes(region.tobytes())
-    except Exception:  # pragma: no cover — numpy missing in minimal envs
-        logger.debug("numpy not available; using fallback region bytes")
+    except Exception:  # pragma: no cover - numpy missing in minimal envs
+        logger.debug("numpy not available; using fallback entropy")
 
-    # Fallback: hash a deterministic representation. Still irreversible.
-    return f"region:{x}:{y}:{w}:{h}".encode("utf-8")
+    # Privacy-preserving fallback: the bbox coordinates MUST NOT enter the
+    # hasher input. Use OS entropy instead. The hash is still a valid
+    # SHA-256 hex digest of expected length; it is simply uncorrelated
+    # with the bbox.
+    import os
+    return os.urandom(16)

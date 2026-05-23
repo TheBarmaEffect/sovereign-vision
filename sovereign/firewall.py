@@ -1,4 +1,4 @@
-"""Constitutional Firewall — the orchestrator.
+"""Constitutional Firewall - the orchestrator.
 
 The firewall takes raw YOLO detections and runs them through the constitutional
 rule set BEFORE any output is produced. The output of `process_frame` is the
@@ -70,7 +70,7 @@ class FirewallResult:
     certified_detections: list[AnonDetection]
     rules_fired: list[RuleEvent]
     frame_aggregate: FrameAggregate
-    constitutional_status: str  # CERTIFIED | ESCALATED | BLOCKED
+    constitutional_status: str  # CLEAR | ESCALATED | BLOCKED
     processing_latency_ms: float
     inference_latency_ms: float = 0.0
     redactions_performed: int = 0
@@ -99,7 +99,7 @@ class FirewallResult:
 
 @dataclass(slots=True)
 class RawDetection:
-    """The input to the firewall — what YOLO would normally produce.
+    """The input to the firewall - what YOLO would normally produce.
 
     The firewall is the *only* code in the system that should ever see raw
     detections. Once `process_frame` returns, the caller should discard the
@@ -127,6 +127,7 @@ class ConstitutionalFirewall:
         aggregator: ZoneAggregator | None = None,
         sensitive_classes: Iterable[str] | None = None,
         session_id: str | None = None,
+        dp_epsilon: float | None = None,
     ) -> None:
         self._rules: tuple[ConstitutionalRule, ...] = tuple(rules) if rules else DEFAULT_RULES
         validate_rule_set(self._rules)
@@ -139,6 +140,18 @@ class ConstitutionalFirewall:
         self._frame_counter: int = 0
         self._total_rules_fired: int = 0
         self._total_redactions: int = 0
+
+        # SV-007: differential privacy mechanism on zone aggregates
+        from sovereign.dp import DPConfig
+        sv007 = next((r for r in self._rules if r.rule_id == "SV-007"), None)
+        if dp_epsilon is not None:
+            self._dp_config: DPConfig | None = DPConfig(epsilon=dp_epsilon)
+        elif sv007 is not None:
+            eps = float(dict(sv007.metadata).get("epsilon", "1.0"))
+            self._dp_config = DPConfig(epsilon=eps)
+        else:
+            self._dp_config = None
+        self._dp_queries: int = 0
 
         logger.info(
             "ConstitutionalFirewall ready: session=%s rules=%s",
@@ -182,7 +195,7 @@ class ConstitutionalFirewall:
                             events.append(_make_event(rule, det.class_name, blocked=True))
                             self._total_rules_fired += 1
                             break
-                        # else: rule applies but passes — no event recorded
+                        # else: rule applies but passes - no event recorded
                         continue
                     # Track-ID suppression: always fires for persons
                     self._redactor.suppress_track_id(det.track_id, rule_id=rule.rule_id)
@@ -227,10 +240,16 @@ class ConstitutionalFirewall:
             sensitive_classes=self._sensitive_classes,
         )
 
+        # 2b) SV-007: apply differential privacy noise to zone counts.
+        if self._dp_config is not None:
+            from sovereign.dp import noisy_dict
+            agg.zone_counts = noisy_dict(agg.zone_counts, self._dp_config)
+            self._dp_queries += 1
+
         # 3) finalise
         latency_ms = (time.perf_counter_ns() - start_ns) / 1e6
         status = "BLOCKED" if not certified and any(e.blocked for e in events) else (
-            "ESCALATED" if escalated else "CERTIFIED"
+            "ESCALATED" if escalated else "CLEAR"
         )
         self._total_redactions = self._redactor.redactions_performed
 
@@ -251,6 +270,14 @@ class ConstitutionalFirewall:
         )
 
     # -- accessors -----------------------------------------------------------
+
+    @property
+    def dp_cumulative_epsilon(self) -> float:
+        """Sum of per-query epsilons spent so far (naive composition)."""
+        if self._dp_config is None:
+            return 0.0
+        from sovereign.dp import composition_epsilon
+        return composition_epsilon(self._dp_config.epsilon, self._dp_queries)
 
     @property
     def session_id(self) -> str:

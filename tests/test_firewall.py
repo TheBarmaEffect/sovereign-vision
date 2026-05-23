@@ -33,7 +33,7 @@ def test_person_bbox_never_in_output(firewall, sample_detections, synthetic_fram
         if d.class_name == "person":
             assert d.original_bbox is None, "person bbox MUST be redacted"
 
-    # Also check the JSON serialisation — PII can't leak via to_dict either
+    # Also check the JSON serialisation - PII can't leak via to_dict either
     payload = result.to_dict()
     encoded = json.dumps(payload)
     # The synthesised person bbox (100, 200, 80, 200) must not be present
@@ -48,7 +48,7 @@ def test_person_bbox_never_in_output(firewall, sample_detections, synthetic_fram
 def test_face_hash_is_irreversible(firewall, sample_detections, synthetic_frame) -> None:
     """SV-002: face hash is SHA-256 hex (irreversible by cryptographic property).
 
-    We can't directly test irreversibility — that's the SHA-256 contract. Instead
+    We can't directly test irreversibility - that's the SHA-256 contract. Instead
     we test the observable invariants:
       - hex format with exactly 64 lowercase chars (256 bits)
       - same region → same hash (deterministic)

@@ -18,12 +18,12 @@ from sovereign.rules import (
 
 
 def test_default_rule_count() -> None:
-    assert len(DEFAULT_RULES) == 6
+    assert len(DEFAULT_RULES) == 7
 
 
 def test_all_default_rule_ids_present() -> None:
     ids = {r.rule_id for r in DEFAULT_RULES}
-    assert ids == {f"SV-00{i}" for i in range(1, 7)}
+    assert ids == {f"SV-00{i}" for i in range(1, 8)}
 
 
 def test_rule_immutability() -> None:

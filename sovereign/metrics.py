@@ -32,7 +32,7 @@ class MetricsSnapshot:
     total_frames: int
     total_rules_fired: int
     total_redactions: int
-    status_certified: int
+    status_clear: int
     status_escalated: int
     status_blocked: int
 
@@ -44,7 +44,7 @@ class MetricsSnapshot:
             "total_frames": self.total_frames,
             "total_rules_fired": self.total_rules_fired,
             "total_redactions": self.total_redactions,
-            "status_certified": self.status_certified,
+            "status_clear": self.status_clear,
             "status_escalated": self.status_escalated,
             "status_blocked": self.status_blocked,
         }
@@ -62,7 +62,7 @@ class MetricsRegistry:
         self._total_rules_fired: int = 0
         self._total_redactions: int = 0
         self._status_counts: dict[str, int] = {
-            "CERTIFIED": 0,
+            "CLEAR": 0,
             "ESCALATED": 0,
             "BLOCKED": 0,
         }
@@ -87,7 +87,7 @@ class MetricsRegistry:
             total_frames=self._total_frames,
             total_rules_fired=self._total_rules_fired,
             total_redactions=self._total_redactions,
-            status_certified=self._status_counts.get("CERTIFIED", 0),
+            status_clear=self._status_counts.get("CLEAR", 0),
             status_escalated=self._status_counts.get("ESCALATED", 0),
             status_blocked=self._status_counts.get("BLOCKED", 0),
         )
@@ -116,7 +116,7 @@ class MetricsRegistry:
             f"sovereign_total_redactions {snap.total_redactions}",
             "# HELP sovereign_status_count Count of frames per constitutional status.",
             "# TYPE sovereign_status_count counter",
-            f'sovereign_status_count{{status="CERTIFIED"}} {snap.status_certified}',
+            f'sovereign_status_count{{status="CLEAR"}} {snap.status_clear}',
             f'sovereign_status_count{{status="ESCALATED"}} {snap.status_escalated}',
             f'sovereign_status_count{{status="BLOCKED"}} {snap.status_blocked}',
         ]

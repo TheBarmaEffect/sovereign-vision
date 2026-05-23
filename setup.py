@@ -1,4 +1,4 @@
-"""Sovereign Vision — package setup.
+"""Sovereign Vision - package setup.
 
 Installs the `sovereign` core package and the `dashboard` / `demo` modules
 in editable mode so judges can run the demo immediately after `pip install -e .`.

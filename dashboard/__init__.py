@@ -1,1 +1,1 @@
-"""Sovereign Vision dashboard package — 3-panel live UI plus Rich terminal view."""
+"""Sovereign Vision dashboard package - 3-panel live UI plus Rich terminal view."""

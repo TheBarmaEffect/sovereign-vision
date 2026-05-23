@@ -1,4 +1,4 @@
-"""Zone aggregator — turns redacted detections into enterprise metrics.
+"""Zone aggregator - turns redacted detections into enterprise metrics.
 
 This is the only legal source of "what the enterprise sees". It produces
 coarse-grained, time-windowed, statistical outputs:
@@ -139,7 +139,7 @@ class ZoneAggregator:
     def compute_dwell_time_estimate(self, fps: float = 30.0) -> dict[str, float]:
         """Estimate aggregate dwell time per zone in seconds.
 
-        This is NOT individual tracking — it is the average lifetime of
+        This is NOT individual tracking - it is the average lifetime of
         non-zero occupancy windows. Computed from the rolling occupancy
         deque, with no per-person tracking.
         """

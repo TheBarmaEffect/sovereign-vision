@@ -67,7 +67,7 @@ class ConstitutionalRule:
     """An immutable constitutional rule.
 
     Frozen so a running system cannot mutate the constitution. To change
-    rules, build a new firewall with a new rule list — this guarantees that
+    rules, build a new firewall with a new rule list - this guarantees that
     the rules-applied list in every certificate matches the rules that were
     actually in force.
     """
@@ -118,7 +118,7 @@ SV_001 = ConstitutionalRule(
     applies_to=PERSON_LIKE_CLASSES,
     action=RuleAction.REDACT,
     severity=RuleSeverity.CRITICAL,
-    legal_basis="GDPR Article 4(1) — Personal Data Definition",
+    legal_basis="GDPR Article 4(1) - Personal Data Definition",
 )
 
 SV_002 = ConstitutionalRule(
@@ -132,7 +132,7 @@ SV_002 = ConstitutionalRule(
     applies_to=PERSON_LIKE_CLASSES,
     action=RuleAction.HASH,
     severity=RuleSeverity.CRITICAL,
-    legal_basis="GDPR Article 9 — Biometric Data",
+    legal_basis="GDPR Article 9 - Biometric Data",
 )
 
 SV_003 = ConstitutionalRule(
@@ -146,7 +146,7 @@ SV_003 = ConstitutionalRule(
     applies_to=PERSON_LIKE_CLASSES,
     action=RuleAction.BLOCK,
     severity=RuleSeverity.CRITICAL,
-    legal_basis="GDPR Recital 30 — Online Identifiers",
+    legal_basis="GDPR Recital 30 - Online Identifiers",
 )
 
 SV_004 = ConstitutionalRule(
@@ -160,7 +160,7 @@ SV_004 = ConstitutionalRule(
     applies_to=(WILDCARD,),
     action=RuleAction.AGGREGATE,
     severity=RuleSeverity.HIGH,
-    legal_basis="GDPR Article 89 — Anonymisation Principle",
+    legal_basis="GDPR Article 89 - Anonymisation Principle",
     aggregation_window=DEFAULT_AGGREGATION_WINDOW,
 )
 
@@ -175,7 +175,7 @@ SV_005 = ConstitutionalRule(
     applies_to=PERSON_LIKE_CLASSES + ("face",),
     action=RuleAction.BLOCK,
     severity=RuleSeverity.HIGH,
-    legal_basis="GDPR Article 22 — Automated Decision-Making",
+    legal_basis="GDPR Article 22 - Automated Decision-Making",
     confidence_floor=DEFAULT_CONFIDENCE_FLOOR,
 )
 
@@ -193,6 +193,25 @@ SV_006 = ConstitutionalRule(
     legal_basis="Enterprise Safety Protocol",
 )
 
+SV_007 = ConstitutionalRule(
+    rule_id="SV-007",
+    name="Differential Privacy Noise on Aggregates",
+    description=(
+        "Calibrated Laplace noise is added to per-zone counts before they "
+        "leave the firewall. This is an (epsilon=1.0)-differentially-"
+        "private mechanism on a count query with sensitivity 1, giving "
+        "formally bounded re-identification risk under repeated query."
+    ),
+    applies_to=(WILDCARD,),
+    action=RuleAction.AGGREGATE,
+    severity=RuleSeverity.HIGH,
+    legal_basis=(
+        "GDPR Article 25 - Data Protection by Design and by Default; "
+        "NIST SP 800-188 (De-Identifying Government Datasets)"
+    ),
+    metadata=(("epsilon", "1.0"), ("sensitivity", "1"), ("mechanism", "laplace")),
+)
+
 DEFAULT_RULES: tuple[ConstitutionalRule, ...] = (
     SV_001,
     SV_002,
@@ -200,6 +219,7 @@ DEFAULT_RULES: tuple[ConstitutionalRule, ...] = (
     SV_004,
     SV_005,
     SV_006,
+    SV_007,
 )
 
 

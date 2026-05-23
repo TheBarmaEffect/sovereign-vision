@@ -115,7 +115,7 @@ class SovereignConfig:
             return cls()
         p = Path(path)
         if not p.exists():
-            logger.warning("Config %s not found — using defaults", p)
+            logger.warning("Config %s not found - using defaults", p)
             return cls()
         return cls.from_dict(_load_yaml(p))
 

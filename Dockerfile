@@ -1,11 +1,11 @@
-# Sovereign Vision — Docker image for the simulation / CI backend.
+# Sovereign Vision - Docker image for the simulation / CI backend.
 #
 # Note: MLX is Apple-Silicon-only, so this image runs the constitutional
 # firewall on the simulation backend. Useful for CI, integration tests,
 # and headless deployment in environments where you only need the
 # certificate stream (not real inference).
 #
-# On Apple Silicon, run natively in a venv instead — MLX gives you ~55+
+# On Apple Silicon, run natively in a venv instead - MLX gives you ~55+
 # FPS on yolo26m and is the recommended deployment target.
 
 FROM python:3.12-slim

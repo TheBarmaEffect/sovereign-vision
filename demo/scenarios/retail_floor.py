@@ -1,4 +1,4 @@
-"""Retail floor — foot traffic analytics scenario.
+"""Retail floor - foot traffic analytics scenario.
 
 Retailers want store analytics: dwell time, hotspot zones, entry/exit flow.
 They want this WITHOUT loyalty cards, WITHOUT cookies, WITHOUT face recognition.
@@ -12,7 +12,7 @@ from demo.scenarios import Scenario
 def scenario() -> Scenario:
     return Scenario(
         name="retail_floor",
-        title="Retail Floor — Foot Traffic Analytics",
+        title="Retail Floor - Foot Traffic Analytics",
         description=(
             "Store-level dwell time, hotspot identification, and flow analytics "
             "without tracking any individual. No loyalty card, no cookies, no "
@@ -32,7 +32,7 @@ def scenario() -> Scenario:
         ppe_required=[],
         escalation_classes=["knife", "gun"],
         compliance_note=(
-            "CCPA / CPRA compliant by design — aggregate-only analytics. "
+            "CCPA / CPRA compliant by design - aggregate-only analytics. "
             "No 'personal information' as defined by Cal. Civ. Code §1798.140 "
             "is collected, processed, or stored."
         ),

@@ -1,4 +1,4 @@
-# Sovereign Vision — factory-floor scenario configuration.
+# Sovereign Vision - factory-floor scenario configuration.
 #
 # Drop-in YAML for `python demo/run_demo.py --config configs/factory_floor.yaml`.
 

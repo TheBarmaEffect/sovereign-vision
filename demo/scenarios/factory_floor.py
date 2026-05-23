@@ -1,4 +1,4 @@
-"""Factory floor — PPE compliance monitoring scenario.
+"""Factory floor - PPE compliance monitoring scenario.
 
 The factory wants to know:
   - Are workers wearing required PPE?
@@ -15,7 +15,7 @@ from demo.scenarios import Scenario
 def scenario() -> Scenario:
     return Scenario(
         name="factory_floor",
-        title="Factory Floor — PPE Compliance Monitoring",
+        title="Factory Floor - PPE Compliance Monitoring",
         description=(
             "Real-time enforcement of PPE requirements on an active "
             "manufacturing line. Workers' identities are never recorded, "

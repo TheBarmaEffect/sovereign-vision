@@ -1,4 +1,4 @@
-"""Enterprise demo scenarios — factory floor, retail, warehouse."""
+"""Enterprise demo scenarios - factory floor, retail, warehouse."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field

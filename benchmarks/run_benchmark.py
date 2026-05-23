@@ -47,7 +47,7 @@ def run_benchmark(n_frames: int = 300, model_path: str = "models/yolo26m.npz") -
         "rules_per_frame": round(snap.total_rules_fired / n_frames, 2),
         "redactions": snap.total_redactions,
         "status_mix": {
-            "CERTIFIED": snap.status_certified,
+            "CLEAR": snap.status_clear,
             "ESCALATED": snap.status_escalated,
             "BLOCKED": snap.status_blocked,
         },

@@ -235,11 +235,11 @@ class CertificateGenerator:
 
     def _derive_overall_status(self) -> str:
         if not self._rules_triggered:
-            return "CERTIFIED"
+            return "CLEAR"
         # If the audit chain verifies and no BLOCKED frame surfaced, we're
         # certified. The firewall stamps BLOCKED on its own; here we just
         # confirm the chain is intact.
-        return "CERTIFIED" if self._chain.verify() else "TAMPERED"
+        return "CLEAR" if self._chain.verify() else "TAMPERED"
 
     def _dump_frame_cert(self, cert: FrameCertificate) -> None:
         assert self._output_dir is not None

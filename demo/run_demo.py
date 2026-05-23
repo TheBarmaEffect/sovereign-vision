@@ -1,4 +1,4 @@
-"""Sovereign Vision — main demo entry point.
+"""Sovereign Vision - main demo entry point.
 
 Single command to start the full system:
 
@@ -73,6 +73,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         camera_index=args.camera,
         headless=args.headless,
         max_frames=args.max_frames,
+        production_mode=args.production,
     )
 
     session_cert = cert_gen.generate_session_cert()
@@ -106,6 +107,7 @@ def _run_loop(
     camera_index: int,
     headless: bool,
     max_frames: int | None,
+    production_mode: bool = False,
 ) -> int:
     """Read frames → run detector → ingest into dashboard → write certs."""
     quitter = _Quitter()
@@ -121,7 +123,7 @@ def _run_loop(
 
     # 3) optionally set up the OpenCV window + Rich dashboard
     composite_frame = ingest = TerminalDashboard = None  # type: ignore[assignment]
-    window_title = "Sovereign Vision — Constitutional Firewall (live)"
+    window_title = "Sovereign Vision - Constitutional Firewall (live)"
     if not headless:
         try:
             import cv2
@@ -133,17 +135,22 @@ def _run_loop(
                 ingest,
             )
 
+            from sovereign.hardware import detect as detect_hw
+
+            hw = detect_hw()
+            hw_label = f"{hw.display_chip}   ·   {hw.display_cores}   ·   {hw.display_memory}   ·   {hw.display_mlx}"
             ctx = DashboardContext(
                 firewall=firewall,
                 cert_gen=cert_gen,
                 metrics=metrics,
                 model_name=model_name,
+                hardware_label=hw_label,
             )
             terminal = TerminalDashboard(ctx)
             terminal.start()
             cv2.namedWindow(window_title, cv2.WINDOW_NORMAL)
         except ImportError as exc:
-            logger.warning("OpenCV/Rich unavailable (%s) — running headless", exc)
+            logger.warning("OpenCV/Rich unavailable (%s) - running headless", exc)
             headless = True
     else:
         ctx = None
@@ -162,13 +169,18 @@ def _run_loop(
                 time.sleep(0.05)
                 continue
 
-            result = detector.detect(frame)
+            # In production mode the dashboard's left panel is suppressed,
+            # so we never request the raw side channel. In demo mode we
+            # request it through the AUDITED side channel which uses the
+            # same inference call (no double-predict loophole).
+            if not headless and ctx is not None and not production_mode:
+                result, raw_for_view = detector.detect_with_raw_preview(frame)
+            else:
+                result = detector.detect(frame)
+                raw_for_view = []
             cert = cert_gen.generate_frame_cert(result, rules=list(firewall.rules))
 
             if not headless and ctx is not None:
-                # We deliberately rebuild the raw detection list here purely
-                # for visualisation. The official pipeline already ran above.
-                raw_for_view = _peek_raw(detector, frame)
                 ingest(ctx, raw_for_view, result, cert)  # type: ignore[misc]
                 composite = composite_frame(ctx, frame)  # type: ignore[misc]
                 import cv2  # already imported above; harmless
@@ -207,7 +219,7 @@ def _run_loop(
 def _parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="sovereign-vision",
-        description="Sovereign Vision — Constitutional Firewall for on-device CV.",
+        description="Sovereign Vision - Constitutional Firewall for on-device CV.",
     )
     parser.add_argument("--config", type=Path, default=None, help="YAML config path")
     parser.add_argument(
@@ -237,7 +249,17 @@ def _parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
         "--write-frame-certs",
         dest="write_frame_certs",
         action="store_true",
-        help="Persist a JSON certificate per frame (default off — session cert only)",
+        help="Persist a JSON certificate per frame (default off - session cert only)",
+    )
+    parser.add_argument(
+        "--production",
+        action="store_true",
+        help=(
+            "Production mode: suppress the RAW INFERENCE panel and refuse "
+            "the audited raw-preview side channel. The dashboard shows only "
+            "the firewall log and certified output. Recommended for "
+            "deployment; use the default for live demos."
+        ),
     )
     parser.add_argument("-v", "--verbose", action="store_true")
     return parser.parse_args(argv)
@@ -255,14 +277,14 @@ def _check_apple_silicon() -> None:
     machine = platform.machine()
     if machine.lower() not in ("arm64", "aarch64"):
         logger.warning(
-            "Running on %s — not Apple Silicon. MLX acceleration is disabled.",
+            "Running on %s - not Apple Silicon. MLX acceleration is disabled.",
             machine,
         )
 
 
 def _print_startup_banner(cfg, session_id: str, args: argparse.Namespace) -> None:
     print("=" * 72)
-    print(" SOVEREIGN VISION v1.0  —  On-device Constitutional Computer Vision")
+    print(" SOVEREIGN VISION v1.0  -  On-device Constitutional Computer Vision")
     print("=" * 72)
     print(f"  Model         : {cfg.detector.model_path}")
     print(f"  Scenario      : {cfg.scenario.name}")
@@ -296,9 +318,9 @@ def _open_camera(
         cap = cv2.VideoCapture(camera_index)
         if cap is not None and cap.isOpened():
             return cap, model_path.stem or "yolo26"
-        logger.info("No physical camera at index %d — using synthetic feed.", camera_index)
+        logger.info("No physical camera at index %d - using synthetic feed.", camera_index)
     except ImportError:
-        logger.info("OpenCV not installed — using synthetic feed.")
+        logger.info("OpenCV not installed - using synthetic feed.")
 
     return SyntheticCamera(), model_path.stem or "yolo26"
 
@@ -310,28 +332,6 @@ def _read_frame(cap):
     except Exception as exc:
         logger.error("camera read raised: %s", exc)
         return False, None
-
-
-def _peek_raw(detector, frame):
-    """Best-effort visualisation helper — pulls a raw detection list from
-    the underlying model for the left panel only. This list is dropped at
-    the end of the render frame; it is not persisted anywhere.
-    """
-    model = getattr(detector, "_model", None)
-    if model is None:
-        return []
-    predict = getattr(model, "predict", None)
-    if predict is None:
-        return []
-    try:
-        raw = predict(frame, conf=0.25)
-        from sovereign.detector import _yolo_results_to_raw
-
-        if isinstance(raw, list) and raw and not hasattr(raw[0], "boxes"):
-            return raw  # SimulationModel already returns RawDetection
-        return _yolo_results_to_raw(raw)
-    except Exception:
-        return []
 
 
 # ---------------------------------------------------------------------------

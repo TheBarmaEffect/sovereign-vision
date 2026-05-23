@@ -31,17 +31,22 @@ def main() -> int:
     metrics = MetricsRegistry()
     detector = SovereignDetector(model_path=Path("models/yolo26m.npz"), firewall=fw)
     cam = SyntheticCamera()
-    ctx = DashboardContext(firewall=fw, cert_gen=cert_gen, metrics=metrics, model_name="yolo26m")
+
+    from sovereign.hardware import detect as detect_hw
+    hw = detect_hw()
+    hw_label = f"{hw.display_chip}   ·   {hw.display_cores}   ·   {hw.display_memory}   ·   {hw.display_mlx}"
+
+    ctx = DashboardContext(
+        firewall=fw, cert_gen=cert_gen, metrics=metrics,
+        model_name="yolo26m", hardware_label=hw_label,
+    )
 
     last_frame: np.ndarray | None = None
     for _ in range(args.warmup_frames):
         _, frame = cam.read()
         last_frame = frame
-        result = detector.detect(frame)
+        result, raw_view = detector.detect_with_raw_preview(frame)
         cert = cert_gen.generate_frame_cert(result, rules=list(fw.rules))
-        from demo.run_demo import _peek_raw  # type: ignore[import-not-found]
-
-        raw_view = _peek_raw(detector, frame)
         ingest(ctx, raw_view, result, cert)
 
     if last_frame is None:

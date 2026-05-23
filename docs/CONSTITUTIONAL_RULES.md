@@ -1,4 +1,4 @@
-# Sovereign Vision — The Constitution
+# Sovereign Vision - The Constitution
 
 This document is the complete legal specification of the six rules that
 ship with Sovereign Vision. Each rule has a stable ID, a legal basis, an
@@ -16,7 +16,7 @@ firewall on every session and recorded in every compliance certificate.
 
 ---
 
-## SV-001 — Person Coordinate Redaction
+## SV-001 - Person Coordinate Redaction
 
 > **Action**: REDACT &nbsp;·&nbsp; **Severity**: CRITICAL
 
@@ -40,7 +40,7 @@ is the single most common GDPR failure mode in deployed CV systems.
 
 ---
 
-## SV-002 — Face Region Cryptographic Hash
+## SV-002 - Face Region Cryptographic Hash
 
 > **Action**: HASH &nbsp;·&nbsp; **Severity**: CRITICAL
 
@@ -61,11 +61,11 @@ goes out of scope.
 **Why a salt.** Without a salt, two sessions on the same hardware could
 produce identical hashes for the same person, giving a deterministic
 cross-session identifier. The per-session salt breaks that linkage. The
-salt is in-memory only — never persisted, never logged.
+salt is in-memory only - never persisted, never logged.
 
 ---
 
-## SV-003 — Individual Track ID Suppression
+## SV-003 - Individual Track ID Suppression
 
 > **Action**: BLOCK &nbsp;·&nbsp; **Severity**: CRITICAL
 
@@ -80,8 +80,8 @@ otherwise assign is dropped to `None` by the redactor's
 `suppress_track_id()` method. Persons are counted within a frame; they
 are not tracked across frames.
 
-**Why this is critical.** Track IDs enable behavioural profiling — dwell
-time per individual, path through a store, time spent at a shelf — which
+**Why this is critical.** Track IDs enable behavioural profiling - dwell
+time per individual, path through a store, time spent at a shelf - which
 all become personal data under GDPR the moment they can be reattached to
 an identifiable person (e.g. through CCTV review or floor staff
 recognition). Aggregate dwell time computed over anonymous occupancy
@@ -89,7 +89,7 @@ counts is fine; per-individual dwell time is not.
 
 ---
 
-## SV-004 — Zone Aggregate Only Output
+## SV-004 - Zone Aggregate Only Output
 
 > **Action**: AGGREGATE &nbsp;·&nbsp; **Severity**: HIGH
 
@@ -104,14 +104,14 @@ spatial grid (configurable). The default aggregation window is 5 frames,
 preventing the special case of single-frame identification when only one
 person is in the scene.
 
-**Note on the wildcard.** SV-004 has `applies_to=("*",)` — it fires for
+**Note on the wildcard.** SV-004 has `applies_to=("*",)` - it fires for
 every detection class, not just persons. This is deliberate: aggregating
 sensitive objects (knives, phones) by zone is also a useful enterprise
 signal, and the wildcard ensures uniform aggregate-only handling.
 
 ---
 
-## SV-005 — Confidence Floor Enforcement
+## SV-005 - Confidence Floor Enforcement
 
 > **Action**: BLOCK &nbsp;·&nbsp; **Severity**: HIGH
 
@@ -133,12 +133,12 @@ Sovereign Vision prefers a few false negatives over any false positives.
 
 ---
 
-## SV-006 — Sensitive Object Class Escalation
+## SV-006 - Sensitive Object Class Escalation
 
 > **Action**: ESCALATE &nbsp;·&nbsp; **Severity**: MEDIUM
 
 **Legal basis.** Internal enterprise safety protocols (OSHA 1910, FAA
-Part 139, hospital security). Not a GDPR rule per se — this is a safety
+Part 139, hospital security). Not a GDPR rule per se - this is a safety
 rule that benefits *from* GDPR compliance because it lets safety officers
 inspect aggregate events without legal exposure.
 
@@ -174,7 +174,7 @@ fw = ConstitutionalFirewall(rules=list(DEFAULT_RULES) + [my_rule])
 ```
 
 `ConstitutionalRule` is `frozen=True`. To change a rule's enforcement,
-build a new instance and rebuild the firewall — the running instance
+build a new instance and rebuild the firewall - the running instance
 cannot be mutated. This is by design: the rule set in force at
 certification time is what the certificate records.
 

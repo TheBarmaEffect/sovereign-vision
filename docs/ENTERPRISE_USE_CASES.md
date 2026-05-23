@@ -1,18 +1,18 @@
-# Sovereign Vision — Enterprise Use Cases
+# Sovereign Vision - Enterprise Use Cases
 
 Three production scenarios where Sovereign Vision unlocks deployments
 that would otherwise be blocked by legal or compliance review.
 
 ---
 
-## 1. Manufacturing — Factory floor PPE compliance
+## 1. Manufacturing - Factory floor PPE compliance
 
 ### Problem
 OSHA 29 CFR 1910.132 requires employers to "assess the workplace to
 determine if hazards are present" and ensure PPE is worn. Modern
 factories want to use computer vision to continuously monitor PPE
 compliance, but every system on the market today identifies individual
-workers — which:
+workers - which:
 
   - Triggers GDPR / state-level employee monitoring requirements
   - Creates union friction (continuous individual surveillance)
@@ -43,9 +43,9 @@ every worker and every piece of PPE. The constitutional firewall guarantees:
 | Session integrity hash | Can we prove to OSHA we measured what we measured? |
 
 ### Compliance coverage
-- GDPR Article 4, 9, 22, 89 — by design
-- OSHA 29 CFR 1910.132 — audit evidence in certificate
-- US state employee monitoring laws (CT, DE, NY) — no individual data collected
+- GDPR Article 4, 9, 22, 89 - by design
+- OSHA 29 CFR 1910.132 - audit evidence in certificate
+- US state employee monitoring laws (CT, DE, NY) - no individual data collected
 
 ### ROI argument
 A single forklift accident under OSHA carries fines up to $156,259
@@ -56,7 +56,7 @@ citation.
 
 ---
 
-## 2. Retail — Foot traffic analytics without PII
+## 2. Retail - Foot traffic analytics without PII
 
 ### Problem
 Retailers want to know:
@@ -92,19 +92,19 @@ None of these require identifying anyone.
 | Per-second arrival rate at entrance | Is our staffing matching traffic? |
 
 ### Compliance coverage
-- CCPA / CPRA — no "personal information" (Cal. Civ. Code §1798.140) collected
-- GDPR — no personal data; no need for cookie banner, opt-in, or DPIA
-- COPPA — children not individually identified
+- CCPA / CPRA - no "personal information" (Cal. Civ. Code §1798.140) collected
+- GDPR - no personal data; no need for cookie banner, opt-in, or DPIA
+- COPPA - children not individually identified
 
 ### ROI argument
-The average mid-sized retailer spends $30K–$120K/year on third-party
+The average mid-sized retailer spends $30K-$120K/year on third-party
 foot-traffic SaaS (RetailNext, ShopperTrak). Sovereign Vision runs on a
-$700 Mac mini per store. Payback is measured in months, not years —
+$700 Mac mini per store. Payback is measured in months, not years -
 plus, the data lives on-device, so privacy is the product.
 
 ---
 
-## 3. Healthcare — Hospital zone monitoring (HIPAA)
+## 3. Healthcare - Hospital zone monitoring (HIPAA)
 
 ### Problem
 Hospitals need real-time visibility into:
@@ -132,14 +132,14 @@ Sensitive-zone access becomes an escalation event, not a video clip.
 | Hand-sanitizer station proximity | Hygiene compliance trends |
 
 ### Compliance coverage
-- HIPAA 45 CFR §164.514(b) "Safe Harbor" — no 18 identifiers retained
-- HIPAA Privacy Rule §164.502(b) — minimum necessary by design
-- Joint Commission EC.02.06.01 — environmental safety evidence
+- HIPAA 45 CFR §164.514(b) "Safe Harbor" - no 18 identifiers retained
+- HIPAA Privacy Rule §164.502(b) - minimum necessary by design
+- Joint Commission EC.02.06.01 - environmental safety evidence
 
 ### ROI argument
 The average hospital readmission costs $15.5K. Smarter staffing and
 flow improvement from aggregate analytics reduce ED LWBS (Left Without
-Being Seen) rates by 8–15% in case studies (Mass General, 2023). Even a
+Being Seen) rates by 8-15% in case studies (Mass General, 2023). Even a
 1% improvement at a mid-sized hospital recovers the system cost in <30
 days.
 
