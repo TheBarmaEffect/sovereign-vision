@@ -1,0 +1,20 @@
+# Prometheus scrape config for Sovereign Vision.
+#
+# Drop this into your Prometheus server's prometheus.yml `scrape_configs`
+# (or use it standalone with `prometheus --config.file=prometheus.yml`).
+#
+# Sovereign Vision exposes OpenMetrics at /metrics from the FastAPI
+# server (sovereign.server). Default endpoint is 127.0.0.1:8765.
+
+global:
+  scrape_interval: 1s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: "sovereign-vision"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["127.0.0.1:8765"]
+        labels:
+          app: "sovereign-vision"
+          deployment: "local"

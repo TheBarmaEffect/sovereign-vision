@@ -7,11 +7,15 @@
 ![Sovereign Vision dashboard](assets/demo_screenshot.png)
 
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![PyPI](https://img.shields.io/badge/pip-sovereign--vision-3775A9.svg)](https://pypi.org/project/sovereign-vision/)
+[![Homebrew](https://img.shields.io/badge/brew-sovereign--vision-FBB040.svg)](homebrew/)
 [![MLX](https://img.shields.io/badge/MLX-Apple%20Silicon-FF9F0A.svg)](https://github.com/ml-explore/mlx)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-0A84FF.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Tests](https://img.shields.io/badge/tests-77%20passing-30D158.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-84%20passing-30D158.svg)](tests/)
 [![Constitution](https://img.shields.io/badge/constitution-SV--001..SV--007-FF453A.svg)](docs/CONSTITUTIONAL_RULES.md)
 [![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M%20series-000000.svg)](https://www.apple.com/mac/)
+[![iOS](https://img.shields.io/badge/iOS-SwiftUI-007AFF.svg)](ios/)
+[![RFC%203161](https://img.shields.io/badge/RFC%203161-DigiCert-30D158.svg)](sovereign/notary.py)
 [![Track](https://img.shields.io/badge/YOLO26%20MLX%20Challenge-Enterprise-BF5AF2.svg)](https://github.com/thewebAI/yolo-mlx)
 [![Research](https://img.shields.io/badge/Research-Glass%20Box%20Framework-30D158.svg)](https://github.com/TheBarmaEffect)
 
@@ -227,6 +231,26 @@ makes that attestation tamper-evident."
 
 ---
 
+## Install (ten ways)
+
+| Channel | One-liner |
+|---|---|
+| pip from GitHub | `pip install git+https://github.com/TheBarmaEffect/sovereign-vision.git` |
+| pip from PyPI | `pip install sovereign-vision` |
+| Homebrew tap | `brew tap TheBarmaEffect/sovereign-vision-tap && brew install sovereign-vision` |
+| One-line installer | `curl -sSL https://raw.githubusercontent.com/TheBarmaEffect/sovereign-vision/main/install.sh \| sh` |
+| GitHub release | `pip install https://github.com/TheBarmaEffect/sovereign-vision/releases/download/v1.3.0/sovereign_vision-1.3.0-py3-none-any.whl` |
+| Docker | `docker run -v $PWD/certs:/data ghcr.io/thebarmaeffect/sovereign-vision:latest` |
+| iOS / iPadOS / macOS app | open `ios/SovereignVision/Package.swift` in Xcode |
+| Chrome extension | load `tools/chrome-extension/` as unpacked extension |
+| macOS menu bar | `pip install rumps && python tools/menubar/sovereign_menubar.py` |
+| GitHub Action | `uses: TheBarmaEffect/sovereign-vision@main` |
+
+After install, run `sovereign doctor` to verify the environment, then
+`sovereign demo` to launch the dashboard.
+
+---
+
 ## Five ways to deploy this
 
 1. **Live demo on your Mac.** `sovereign demo`. The dashboard runs on
@@ -425,11 +449,11 @@ Key proofs:
 | `test_property_zone_counts_non_negative` | Hypothesis: DP-noised counts always >= 0 |
 | `test_zero_pii_guarantee_100_frames` | **Master proof: 100 random frames, scans every cert byte for PII fingerprints.** |
 
-All 77 tests pass in under one second:
+All 84 tests pass in under one second:
 
 ```
 $ pytest tests/ -v
-============================== 77 passed in 0.90s ==============================
+============================== 84 passed in 0.94s ==============================
 ```
 
 To run just the constitutional release-gate proofs:
@@ -476,7 +500,7 @@ deployment checklist in
 
 ---
 
-## Roadmap
+## Roadmap (everything below is shipped in v1.3)
 
 - [x] Constitutional Firewall (SV-001..SV-007)
 - [x] Apple Silicon native via MLX
@@ -490,14 +514,20 @@ deployment checklist in
 - [x] Session replay viewer
 - [x] Webhook system
 - [x] Rule packs (HIPAA, OSHA, retail, transit)
-- [ ] macOS menu bar app (rumps-based)
-- [ ] iOS app (MLX runs on iOS)
-- [ ] OBS virtual camera output (anonymised video stream)
-- [ ] External notary timestamping (RFC 3161)
-- [ ] Multi-camera consensus mode
-- [ ] Grafana datasource plugin
-- [ ] Homebrew tap (`brew install thebarmaeffect/tap/sovereign-vision`)
-- [ ] PyPI release
+- [x] **macOS menu bar app (rumps-based)** - `tools/menubar/`
+- [x] **iOS / iPadOS / macOS / visionOS SwiftUI app** - `ios/SovereignVision/`
+- [x] **OBS virtual camera output** - `tools/virtualcam.py`
+- [x] **External notary timestamping (RFC 3161)** - `sovereign/notary.py` (DigiCert TSA)
+- [x] **Multi-camera consensus mode (M-of-N quorum)** - `sovereign/consensus.py`
+- [x] **Grafana dashboard JSON + Prometheus scrape** - `tools/grafana/`
+- [x] **Homebrew tap** - `brew tap TheBarmaEffect/sovereign-vision-tap`
+- [x] **PyPI release** - `pip install sovereign-vision`
+
+Next on the runway:
+- [ ] Apple Vision Pro spatial cert viewer (visionOS Reality Composer scene)
+- [ ] WebGPU in-browser firewall (privacy at the tab level)
+- [ ] Edge TPU / Coral USB stick support
+- [ ] Per-pack signed publishing via Sigstore
 
 ---
 

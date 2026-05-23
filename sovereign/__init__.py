@@ -52,7 +52,7 @@ from sovereign.rules import (
     RuleSeverity,
 )
 
-__version__ = "1.0.0"
+__version__ = "1.3.0"
 __author__ = "Karthik Barma"
 __license__ = "AGPL-3.0"
 

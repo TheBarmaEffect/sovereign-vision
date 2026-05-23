@@ -1,0 +1,186 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "title": "Sovereign Vision on GitHub",
+      "url": "https://github.com/TheBarmaEffect/sovereign-vision",
+      "type": "link",
+      "icon": "external link"
+    }
+  ],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Live FPS",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red",    "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green",  "value": 50 }
+            ]
+          },
+          "unit": "Hz"
+        }
+      },
+      "targets": [
+        { "expr": "sovereign_fps", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Avg inference latency (ms)",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 25 },
+              { "color": "red",    "value": 50 }
+            ]
+          },
+          "unit": "ms"
+        }
+      },
+      "targets": [
+        { "expr": "sovereign_inference_latency_ms", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Firewall latency (ms)",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green",  "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red",    "value": 5 }
+            ]
+          },
+          "unit": "ms",
+          "decimals": 3
+        }
+      },
+      "targets": [
+        { "expr": "sovereign_firewall_latency_ms", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total rules fired",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "short" }
+      },
+      "targets": [
+        { "expr": "sovereign_total_rules_fired", "refId": "A" }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Status mix (constitutional outcome per frame)",
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" },
+        "displayLabels": ["percent"],
+        "pieType": "donut"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "CLEAR" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "ESCALATED" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "BLOCKED" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "targets": [
+        { "expr": "sum by (status) (sovereign_status_count)", "legendFormat": "{{status}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Constitutional latency over time",
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      },
+      "targets": [
+        { "expr": "sovereign_inference_latency_ms", "legendFormat": "inference", "refId": "A" },
+        { "expr": "sovereign_firewall_latency_ms",  "legendFormat": "firewall",  "refId": "B" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total PII redactions performed",
+      "gridPos": { "h": 5, "w": 8, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "targets": [
+        { "expr": "sovereign_total_redactions", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Total frames",
+      "gridPos": { "h": 5, "w": 8, "x": 8, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "targets": [
+        { "expr": "sovereign_total_frames", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Rules / frame (rate)",
+      "gridPos": { "h": 5, "w": 8, "x": 16, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "sovereign-prom" },
+      "fieldConfig": { "defaults": { "decimals": 2 } },
+      "targets": [
+        {
+          "expr": "sovereign_total_rules_fired / clamp_min(sovereign_total_frames, 1)",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "refresh": "1s",
+  "schemaVersion": 38,
+  "tags": ["sovereign-vision", "constitutional", "privacy", "apple-silicon"],
+  "templating": { "list": [] },
+  "time": { "from": "now-5m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Sovereign Vision  ·  Constitutional Firewall",
+  "uid": "sovereign-vision",
+  "version": 1,
+  "weekStart": ""
+}

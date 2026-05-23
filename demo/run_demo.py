@@ -98,6 +98,14 @@ def main(argv: Optional[list[str]] = None) -> int:
     print(f"  DP epsilon   : {firewall.dp_cumulative_epsilon:.3f}")
     print(f"  merkle root  : {session_cert.anchor.merkle_root}")
     print(f"  output dir   : {output_dir}")
+
+    if args.notarise:
+        from sovereign.notary import notarise_session
+        tsr = notarise_session(session_cert.to_dict(), out_dir=output_dir)
+        if tsr is not None:
+            print(f"  notary       : RFC 3161 TSR written ({len(tsr)} bytes)")
+        else:
+            print(f"  notary       : skipped (TSA unreachable or openssl missing)")
     return rc
 
 
@@ -273,6 +281,15 @@ def _parse_args(argv: Optional[list[str]]) -> argparse.Namespace:
             "the audited raw-preview side channel. The dashboard shows only "
             "the firewall log and certified output. Recommended for "
             "deployment; use the default for live demos."
+        ),
+    )
+    parser.add_argument(
+        "--notarise",
+        action="store_true",
+        help=(
+            "After sealing the session, POST the Merkle root to an "
+            "RFC 3161 Time Stamping Authority (default: DigiCert) and "
+            "save the signed timestamp token alongside the cert."
         ),
     )
     parser.add_argument("-v", "--verbose", action="store_true")

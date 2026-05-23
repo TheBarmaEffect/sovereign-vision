@@ -14,7 +14,7 @@ README = (HERE / "README.md").read_text(encoding="utf-8") if (HERE / "README.md"
 
 setup(
     name="sovereign-vision",
-    version="1.0.0",
+    version="1.3.0",
     description=(
         "The first on-device enterprise vision system that is "
         "GDPR-compliant by design, not by policy."
