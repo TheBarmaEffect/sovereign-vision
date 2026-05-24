@@ -46,6 +46,26 @@ sovereign demo
 
 ---
 
+## webAI YOLO26 MLX Build Challenge — Enterprise track submission
+
+| Field | Value |
+|---|---|
+| **Track** | Enterprise |
+| **Team** | Karthik Barma (solo) |
+| **What it does** | Intercepts every YOLO26 MLX inference in flight and enforces a 7-rule constitutional firewall, so detections that leave the pipeline are aggregate-only, PII-redacted, and cryptographically attested |
+| **Why I built it** | Most enterprise CV deployments die in legal review because YOLO bounding boxes, face crops, and track IDs are all PII under GDPR Art. 4 / Art. 9 / Recital 30. I rebuilt the stack so PII is impossible at the type level |
+| **How to run it** | `pip install sovereign-vision && sovereign demo` (full instructions below) |
+| **Hardware used** | Apple MacBook Pro, M5 Pro (12-core CPU, 18-core GPU, 16-core Neural Engine), 24 GB unified memory, macOS 15. Also tested on M4 Pro |
+| **Model variant** | `yolo26m` (default, ~55 FPS). `yolo26n` available for latency-critical mode (~165 FPS). `yolo26s/l/x` all supported |
+| **MLX role** | **Central and non-decorative.** The constitutional firewall is only possible because YOLO26 inference happens on the same device the frame originated on. If inference were in the cloud, PII would have already left the device by the time any redaction could happen. On-device MLX inference is the privacy guarantee, not a performance optimization |
+| **Demo video** | See `assets/demo_60s.mp4` (also linked in this README's "See it in action" section) |
+| **Built during challenge window** | Yes. First commit May 22, 2026. Final v1.3.0 release May 23, 2026 |
+
+For judges: the [SUBMISSION.md](SUBMISSION.md) file maps every part of this
+work to the 6 webAI judging criteria with file links.
+
+---
+
 ## What is this in one sentence?
 
 A YOLO26-MLX-based computer-vision system that **physically cannot leak PII**
