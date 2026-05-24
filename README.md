@@ -58,7 +58,7 @@ sovereign demo
 | **Hardware used** | Apple MacBook Pro, M5 Pro (12-core CPU, 18-core GPU, 16-core Neural Engine), 24 GB unified memory, macOS 15. Also tested on M4 Pro |
 | **Model variant** | `yolo26m` (default, ~55 FPS). `yolo26n` available for latency-critical mode (~165 FPS). `yolo26s/l/x` all supported |
 | **MLX role** | **Central and non-decorative.** The constitutional firewall is only possible because YOLO26 inference happens on the same device the frame originated on. If inference were in the cloud, PII would have already left the device by the time any redaction could happen. On-device MLX inference is the privacy guarantee, not a performance optimization |
-| **Demo video** | See `assets/demo_60s.mp4` (also linked in this README's "See it in action" section) |
+| **Demo video** | [`assets/demo_60s.mp4`](assets/demo_60s.mp4) (60 s, 1920×720, H.264, 8.2 MB, no narration) |
 | **Built during challenge window** | Yes. First commit May 22, 2026. Final v1.3.0 release May 23, 2026 |
 
 For judges: the [SUBMISSION.md](SUBMISSION.md) file maps every part of this
